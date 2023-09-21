@@ -1,0 +1,16 @@
+{
+    "name": "object-detection-server",
+    "version": "1.0.0",
+    "description": "Server for object detection using YOLOv5",
+    "main": "server.js",
+    "dependencies": {
+      "express": "^4.17.1",
+      "child_process": "^1.0.2"
+    },
+    "scripts": {
+      "start": "node server.js"
+    },
+    "author": "Tuhin Roychowdhury",
+    "license": "MIT"
+  }
+  
