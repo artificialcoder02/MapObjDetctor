@@ -33,12 +33,12 @@ Satellite Object Detective is a web application that integrates Leaflet maps wit
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/satellite-object-detective.git
+   git clone https://github.com/artificialcoder02/MapObjDetctor.git
    ```
 
 2. Navigate to the project directory:
    ```bash
-   cd satellite-object-detective
+   cd MapObjDetctor
    ```
 
 3. Install the necessary dependencies:
