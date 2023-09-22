@@ -1,1 +1,6 @@
-/yolov5
+yolov5/
+*.zip
+*.txt
+*.jpeg
+*.jpeg
+*.png
