@@ -4,17 +4,19 @@
     <title>ObjectDetectorMap</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 </head>
 <body>
     <div id="titleBar">
         <!-- Title and buttons go here -->
         <h1>SatelliteObjectDetective: Leaflet & YOLOv5 Integration</h1>
-        <button>Detect Objects</button>
+        <button onclick="detectObjects()">Detect Objects</button>
         <button>Add Annotations</button>
     </div>
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="script.js"></script> <!-- Create this file for your script -->
+    <script src="script.js"></script>
 </body>
 </html>

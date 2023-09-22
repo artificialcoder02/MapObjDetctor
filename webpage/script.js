@@ -1,5 +1,8 @@
 // Initialize the map
-var map = L.map('map').setView([51.505, -0.09], 13); // Set initial coordinates and zoom level
+const map = L.map('map').setView([51.505, -0.09], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
 // Add a tile layer using OpenStreetMap
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -12,3 +15,13 @@ var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/se
 });
 
 satelliteLayer.addTo(map);
+
+// Initialize the search control
+const searchControl = L.Control.geocoder({
+    defaultMarkGeocode: false,
+    collapsed: true,
+    position: 'topright'
+}).on('markgeocode', function (e) {
+    map.setView(e.geocode.center, 15);
+    // You can do something with the geocode result here if needed
+}).addTo(map);

@@ -49,3 +49,31 @@ body {
 #map:hover {
     height: 90vh;
 }
+
+/* CSS for search control */
+.leaflet-control-geocoder-form {
+    width: 300px;
+    margin-bottom: 10px;
+}
+
+.leaflet-control-geocoder-form input {
+    width: 80%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.leaflet-control-geocoder-form button {
+    width: 18%;
+    padding: 8px;
+    background: #2ecc71;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.leaflet-control-geocoder-form button:hover {
+    background: #27ae60;
+}

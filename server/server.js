@@ -1,8 +1,14 @@
 const express = require('express');
 const app = express();
 const { exec } = require('child_process');
+const path = require('path');
 
 app.use(express.json());
+
+// Serve the HTML file for the root URL
+app.get('/', (req, res) => {
+    res.sendFile('/Users/tuhinrc/Desktop/MapObjDetctor/webpage/index.html');
+});
 
 app.post('/detect-objects', (req, res) => {
     const snapshot = req.body.snapshot;  // Base64-encoded image snapshot or image URL
