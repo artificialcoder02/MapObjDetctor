@@ -1,11 +1,14 @@
 from flask import Flask, render_template, request, jsonify
 import os
 import base64
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-import time
+import torch
+from PIL import Image
 
 app = Flask(__name__)
+
+# Load the YOLOv5 model
+#model = torch.hub.load('ultralytics/yolov5', 'custom','/runs/train/exp14/weights/best.pt')
+model = torch.hub.load('/Users/tuhinrc/Desktop/MapObjDetctor/yolov5', 'custom', path='/Users/tuhinrc/Desktop/MapObjDetctor/yolov5/runs/train/exp14/weights/best.pt', source='local')
 
 @app.route('/')
 def index():
@@ -20,55 +23,38 @@ def detect_objects():
     snapshot_bytes = base64.b64decode(snapshot_data)
 
     # Define a path for a temporary image file
-    temp_image_path = 'yolov5/DOTA/val/images/P0003.png'
+    temp_image_path = 'temp_snapshot.jpg'
 
     # Save the image to a temporary file
     with open(temp_image_path, 'wb') as temp_image:
         temp_image.write(snapshot_bytes)
 
-    # Perform object detection using YOLOv5 on the temporary image
+    # Perform object detection using YOLOv5
     detected_objects = perform_object_detection(temp_image_path)
 
     # Delete the temporary image file
     os.remove(temp_image_path)
 
-    return jsonify({'detected_objects': detected_objects})
+    # Return detected objects as JSON response
+    response = {'detected_objects': detected_objects}
+    return jsonify(response)
 
 def perform_object_detection(image_path):
-    # Initialize headless browser (assuming you're using Chrome)
-    chrome_options = Options()
-    chrome_options.add_argument('--headless')
-    driver = webdriver.Chrome(options=chrome_options)
-    
-    # Open the HTML file with the map
-    driver.get('http://127.0.0.1:5000/')  # Update with your actual URL
+    # Load the image using PIL
+    img = Image.open(image_path)
 
-    # Wait for the map to load (you may need to adjust the sleep time)
-    time.sleep(5)
+    # Perform object detection using YOLOv5
+    results = model(img)
 
-    # Capture a screenshot of the visible portion of the map
-    screenshot_path = 'Outputs/screenshot.png'
-    driver.save_screenshot(screenshot_path)
-    
-    # Close the browser
-    driver.quit()
-
-    # Process the screenshot for object detection
-    detected_objects = process_screenshot_for_detection(screenshot_path)
-
-    # Delete the screenshot file
-    os.remove(screenshot_path)
+    # Get the detected objects and their coordinates
+    detected_objects = []
+    for pred in results.pred[0]:
+        label = model.names[pred[-1]]
+        bbox = pred[:4].tolist()  # [x_min, y_min, x_max, y_max]
+        confidence = float(pred[4])
+        detected_objects.append({'label': label, 'bbox': bbox, 'confidence': confidence})
 
     return detected_objects
-
-def process_screenshot_for_detection(screenshot_path):
-    # This is a placeholder for processing the screenshot for object detection
-    # Replace this with your actual processing logic
-    # You'll read the screenshot image and perform object detection
-    # Return a list of detected objects
-    # For now, we'll return a hardcoded list of objects for testing
-    return ['object1', 'object2']
-
 
 if __name__ == '__main__':
     app.run(debug=True)
