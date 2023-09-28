@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Display a map with a custom style</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #3498db;
+        }
+
+        .map {
+            height: 90%;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body onload="getLocation()">
+
+    <div class="upper_box">
+        <div id="titleBar">
+            <!-- Title and buttons go here -->
+            <h1>SatelliteObjectDetective: Leaflet & YOLOv5 Integration</h1>
+            <div class="heading">
+                <button id="detectButton" class="capture-button">Detect Objects</button>
+                <button>Add Annotations</button>
+            </div>
+        </div>
+        <!-- <button class="capture-button">Capture and Save</button> -->
+
+        <div id="map" class="map"></div>
+    </div>
+
+    <script>
+        var x = document.getElementById("demo");
+        var map;
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition);
+            } else {
+                x.innerHTML = "Geolocation is not supported by this browser.";
+            }
+        }
+
+        function showPosition(position) {
+            mapboxgl.accessToken = 'pk.eyJ1IjoiYXNoaXNoMDYxMyIsImEiOiJjbG1pdjJzc2kwMnc5M2ttdnJ6aHRqMzByIn0.c5WQIl_32AIvpF3xxQbrAg';
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/ashish0613/cln332wie038l01qx0shq9ees',
+                center: [2.349014, 48.864716],
+                zoom: 18
+            });
+
+            new mapboxgl.Marker().setLngLat([2.349014, 48.864716]).addTo(map);
+
+            // Add click event listener to the capture button
+            document.querySelector('.capture-button').addEventListener('click', function () {
+                captureMapAndSave();
+            });
+        }
+
+
+        function captureMapAndSave() {
+            // Use Mapbox's screenshot functionality
+            map.once('render', function () {
+                map.getCanvas().toBlob(function (blob) {
+                    // Convert the blob to a base64 data URL
+                    const reader = new FileReader();
+                    reader.readAsDataURL(blob);
+                    reader.onloadend = function () {
+                        const base64Data = reader.result;
+
+                        // Log the base64 data for debugging
+                        console.log("Base64 data:");
+                        console.log(base64Data);
+
+                        // Create a download link for the captured image
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'map_capture.png';
+                        document.body.appendChild(a);
+                        
+                        // Send the base64Data to the server using an HTTP POST request
+                        fetch('/save-captured-image', {
+                            method: 'POST',
+                            body: JSON.stringify({ image: base64Data }),
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        }).then(response => {
+                            alert('Image saved successfully');
+                            // a.click();
+                            // URL.revokeObjectURL(url);
+                            // document.body.removeChild(a);
+                            // Handle the response from the server (e.g., success or error message)
+                        }).catch(error => {
+                            console.error('Error sending captured image to server:', error);
+                        });
+                    };
+                }, 'image/png');
+            });
+
+            map.triggerRepaint();
+        }
+    </script>
+</body>
+
+</html>

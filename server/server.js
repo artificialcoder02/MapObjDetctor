@@ -1,32 +1,60 @@
 const express = require('express');
 const app = express();
+const fs = require('fs');
 const { exec } = require('child_process');
 const path = require('path');
+const cors = require("cors");
+app.use(cors({ origin: true, credentials: true }));
+const bodyParser = require('body-parser');
+app.use(bodyParser.json({ limit: '10000mb' }));
 
-app.use(express.json());
+// app.use(express.json());
 
 // Serve the HTML file for the root URL
-app.get('/', (req, res) => {
-    res.sendFile('/Users/tuhinrc/Desktop/MapObjDetctor/webpage/index.html');
+app.use(express.static("client"));
+app.get("/", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "index.html"));
 });
 
-app.post('/detect-objects', (req, res) => {
-    const snapshot = req.body.snapshot;  // Base64-encoded image snapshot or image URL
 
-    // Save the snapshot to a temporary image file
-    // Code to save the snapshot to a file (you may need to handle this based on your backend setup)
+app.post('/save-captured-image', (req, res) => {
+    const { image } = req.body;
 
-    // Perform object detection using YOLOv5
-    exec(`python yolov5/detect.py --weights yolov5/weights/best.pt --img-size 640 --conf 0.4 --source ${tempImagePath}`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing YOLOv5: ${stderr}`);
-            return res.status(500).json({ error: 'Error performing object detection' });
+    // Remove the data URL prefix (e.g., 'data:image/png;base64,')
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+
+    // Create a unique filename or use a timestamp-based name
+    const fileName = `captured_${Date.now()}.png`;
+
+    // Specify the path to the "image" folder
+    const imagePath = path.join(__dirname, 'image', fileName);
+
+    // Write the base64 data to a PNG file
+    fs.writeFile(imagePath, base64Data, 'base64', (err) => {
+        if (err) {
+            console.error('Error saving image:', err);
+            return res.status(500).json({ error: 'Error saving image' });
         }
 
-        const detectedObjects = parseDetectionOutput(stdout);  // Parse the output to get detected objects
-        return res.json({ detectedObjects });
+        console.log('Image saved successfully');
+
+        const detect = path.join(__dirname, 'yolov5', 'detect.py');
+        const best = path.join(__dirname, 'yolov5', 'weights', 'best.pt');
+      
+        // Perform object detection using YOLOv5 on the saved PNG file
+        exec(`python3 ${detect} --weights yolov5x6.pt --source ${imagePath}`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing YOLOv5: ${stderr}`);
+                return res.status(500).json({ error: 'Error performing object detection' });
+            }
+            console.log(stderr);
+
+            const detectedObjects = parseDetectionOutput(stdout);  // Parse the output to get detected objects
+            return res.json({ detectedObjects });
+        });
     });
 });
+
 
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
