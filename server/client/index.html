@@ -88,7 +88,7 @@
                         a.href = url;
                         a.download = 'map_capture.png';
                         document.body.appendChild(a);
-                        
+
                         // Send the base64Data to the server using an HTTP POST request
                         fetch('/save-captured-image', {
                             method: 'POST',
@@ -97,11 +97,14 @@
                                 'Content-Type': 'application/json'
                             }
                         }).then(response => {
+                            if (response.status === 200) {
+                                // Image saved successfully, hide the map and display the captured image
+                                map.getContainer().style.display = 'none';
+                                const imgElement = document.createElement('img');
+                                imgElement.src = base64Data;
+                                document.body.appendChild(imgElement);
+                            }
                             alert('Image saved successfully');
-                            // a.click();
-                            // URL.revokeObjectURL(url);
-                            // document.body.removeChild(a);
-                            // Handle the response from the server (e.g., success or error message)
                         }).catch(error => {
                             console.error('Error sending captured image to server:', error);
                         });

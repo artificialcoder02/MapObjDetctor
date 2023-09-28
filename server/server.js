@@ -40,7 +40,18 @@ app.post('/save-captured-image', (req, res) => {
 
         const detect = path.join(__dirname, 'yolov5', 'detect.py');
         const best = path.join(__dirname, 'yolov5', 'weights', 'best.pt');
-      
+
+        // Find the highest existing experiment number in the "yolov5/runs/detect" directory
+        const detectDir = path.join(__dirname, 'yolov5', 'runs', 'detect');
+        const existingExpFolders = fs.readdirSync(detectDir).filter(folder => folder.startsWith('exp'));
+        const highestExp = existingExpFolders.reduce((max, folder) => {
+            const number = parseInt(folder.replace('exp', ''), 10);
+            return number > max ? number : max;
+        }, 0);
+
+        const newExpFolder = `exp${highestExp + 1}`; // Increment the folder name
+
+        console.log(newExpFolder);
         // Perform object detection using YOLOv5 on the saved PNG file
         exec(`python3 ${detect} --weights yolov5x6.pt --source ${imagePath}`, (error, stdout, stderr) => {
             if (error) {
