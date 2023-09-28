@@ -1,6 +1,3 @@
-Sure! Here's a basic README template for your project:
-
----
 
 # Satellite Object Detective: Leaflet & YOLOv5 Integration
 
