@@ -1,8 +1,10 @@
 /yolov5
 /datasets
 /yolov5
+colabcoding.py
 *.zip
 *.txt
 *.jpeg
 *.jpeg
 *.png
+*.jpg

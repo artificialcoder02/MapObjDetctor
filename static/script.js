@@ -59,6 +59,7 @@ function captureMapSnapshot() {
     });
 }
 function sendSnapshotForDetection(snapshotData) {
+
     fetch('/detect-objects', {
         method: 'POST',
         headers: {
@@ -66,6 +67,7 @@ function sendSnapshotForDetection(snapshotData) {
         },
         body: JSON.stringify({
             snapshot: snapshotData
+            
         })
     })
     .then(response => response.json())
