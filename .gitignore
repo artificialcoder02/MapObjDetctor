@@ -23,7 +23,7 @@ yarn-debug.log*
 yarn-error.log*
 
 
-/yolov5
+/server/yolov5
 /datasets
 /yolov5
 *.zip
