@@ -1,4 +1,6 @@
-yolov5/
+/yolov5
+/datasets
+/yolov5
 *.zip
 *.txt
 *.jpeg
