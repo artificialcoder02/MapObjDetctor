@@ -29,6 +29,15 @@
             <!-- Title and buttons go here -->
             <h1>SatelliteObjectDetective: Leaflet & YOLOv5 Integration</h1>
             <div class="heading">
+                <!-- Add an HTML element for the loading spinner -->
+                <div class="lds-ellipsis" id="loadingSpinner" style="display: none;">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+
+                <!-- Add an HTML element for the "Detect Objects" button -->
                 <button id="detectButton" class="capture-button">Detect Objects</button>
                 <button>Add Annotations</button>
             </div>
@@ -36,11 +45,14 @@
         <!-- <button class="capture-button">Capture and Save</button> -->
 
         <div id="map" class="map"></div>
+        <div id="image" class="maps" style="display: none;">
+        </div>
     </div>
 
     <script>
         var x = document.getElementById("demo");
         var map;
+        let isLodind = false;
 
         function getLocation() {
             if (navigator.geolocation) {
@@ -69,6 +81,11 @@
 
 
         function captureMapAndSave() {
+            // Show the loading spinner and hide the button
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const detectButton = document.getElementById('detectButton');
+            loadingSpinner.style.display = 'block';
+            detectButton.style.display = 'none';
             // Use Mapbox's screenshot functionality
             map.once('render', function () {
                 map.getCanvas().toBlob(function (blob) {
@@ -77,10 +94,6 @@
                     reader.readAsDataURL(blob);
                     reader.onloadend = function () {
                         const base64Data = reader.result;
-
-                        // Log the base64 data for debugging
-                        console.log("Base64 data:");
-                        console.log(base64Data);
 
                         // Create a download link for the captured image
                         const url = URL.createObjectURL(blob);
@@ -96,24 +109,57 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             }
-                        }).then(response => {
-                            if (response.status === 200) {
-                                // Image saved successfully, hide the map and display the captured image
-                                map.getContainer().style.display = 'none';
-                                const imgElement = document.createElement('img');
-                                imgElement.src = base64Data;
-                                document.body.appendChild(imgElement);
+                        }).then((response) => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
                             }
-                            alert('Image saved successfully');
-                        }).catch(error => {
-                            console.error('Error sending captured image to server:', error);
-                        });
+                            return response.json(); // Parse the response body as JSON
+                        })
+                            .then((data) => {
+                                // Hide the loading spinner and show the button again
+                                loadingSpinner.style.display = 'none';
+                                detectButton.style.display = 'block';
+                                // Now, "data" should contain the processedImage as a base64 string
+                                map.getContainer().style.display = 'none';
+                                // Create the imgElement within the "upper_box" div
+                                // Create the imgElement within the "image" div
+                                const imgElement = document.createElement('img');
+                                imgElement.src = 'data:image/png;base64,' + data.processedImage;
+
+                                // Get the "image" div by its id and append the imgElement to it
+                                const imageDiv = document.getElementById('image');
+                                imageDiv.style.display = 'block';
+                                imageDiv.appendChild(imgElement);
+
+                            })
+                            .catch((error) => {
+                                console.error('Error:', error);
+                            });
                     };
                 }, 'image/png');
             });
 
+            const imageDiv = document.getElementById('image');
+
+            imageDiv.addEventListener('dblclick', function () {
+                // Check if there is an <img> element within the "image" div
+                const imgElement = imageDiv.querySelector('img');
+
+                if (imgElement) {
+                    // If an <img> element exists, remove it
+                    imgElement.remove();
+                }
+
+                // Always show the map container after double-click
+                map.getContainer().style.display = 'block';
+
+                // Hide the "image" div
+                imageDiv.style.display = 'none';
+            });
             map.triggerRepaint();
         }
+
+
     </script>
 </body>
 

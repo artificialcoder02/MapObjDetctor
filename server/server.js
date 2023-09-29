@@ -39,7 +39,7 @@ app.post('/save-captured-image', (req, res) => {
         console.log('Image saved successfully');
 
         const detect = path.join(__dirname, 'yolov5', 'detect.py');
-        const best = path.join(__dirname, 'yolov5', 'weights', 'best.pt');
+
 
         // Find the highest existing experiment number in the "yolov5/runs/detect" directory
         const detectDir = path.join(__dirname, 'yolov5', 'runs', 'detect');
@@ -51,17 +51,21 @@ app.post('/save-captured-image', (req, res) => {
 
         const newExpFolder = `exp${highestExp + 1}`; // Increment the folder name
 
-        console.log(newExpFolder);
+        const imagePer = path.join(__dirname, 'yolov5', 'runs', 'detect', newExpFolder, fileName);
+
         // Perform object detection using YOLOv5 on the saved PNG file
-        exec(`python3 ${detect} --weights yolov5x6.pt --source ${imagePath}`, (error, stdout, stderr) => {
+        exec(`python3 ${detect} --weights yolov5x6TTA.pt --source ${imagePath}`, (error, stdout, stderr) => {
             if (error) {
-                console.error(`Error executing YOLOv5: ${stderr}`);
+                console.error(`Error executing YOLOv5: ${stderr}`); 
                 return res.status(500).json({ error: 'Error performing object detection' });
             }
             console.log(stderr);
 
-            const detectedObjects = parseDetectionOutput(stdout);  // Parse the output to get detected objects
-            return res.json({ detectedObjects });
+            // Instead of reading the processed image from a file, you can directly convert it to base64
+            const processedImageData = fs.readFileSync(imagePer, 'base64');
+
+            // Send the processed image as base64 in the response
+            return res.json({ processedImage: processedImageData });
         });
     });
 });
