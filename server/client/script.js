@@ -7,6 +7,7 @@ let isLodind = false;
 document.getElementById('popup').style.display = 'none';
 
 document.getElementById('training_btn').style.display = 'none';
+document.getElementById('training_btns').style.display = 'none';
 
 // Add click event listener to the capture button
 document.querySelector('.pop-button').addEventListener('click', function () {
@@ -77,6 +78,8 @@ async function save() {
         if (response.ok) {
             alert('Files saved successfully on the server.');
             document.getElementById('training_btn').style.display = 'block';
+            document.getElementById('training_btns').style.display = 'block';
+
         } else {
             alert('Failed to save files on the server.');
         }

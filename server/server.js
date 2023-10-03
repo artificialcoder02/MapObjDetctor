@@ -17,6 +17,16 @@ app.get("/", (req, res) => {
     res.sendFile(path.resolve(__dirname, "client", "index.html"));
 });
 
+app.use(express.static("client"));
+app.get("/training", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "training.html"));
+});
+
+app.use(express.static("client"));
+app.get("/pretrained", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "pretrained.html"));
+});
+
 app.post('/save-captured-image', (req, res) => {
     const { image } = req.body;
     // Remove the data URL prefix (e.g., 'data:image/png;base64,')
@@ -89,36 +99,61 @@ app.post('/upload', (req, res) => {
 
 
 app.get('/training-from-scratch', (req, res) => {
-
-    // python3 train.py --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10  
     const train = path.join(__dirname, 'yolov5', 'train.py');
+    
+    // Set up SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    const cmd = `python3 ${train} --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10`;
 
-    // erform training Model using YOLOv5 on the data.yaml 
-    exec(`python3 ${train} --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing YOLOv5: ${stderr}`);
-            return res.status(500).json({ error: 'Error performing training Model' });
-        }
-        console.log(stderr);
+    const childProcess = exec(cmd);
+
+    childProcess.stderr.on('data', (data) => {
+        // Send stderr data as SSE messages
+        res.write(`data: ${data}\n\n`);
     });
 
-});
-
-app.get('/training-from-scratch', (req, res) => {
-
-    // python3 train.py --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10  
-    const train = path.join(__dirname, 'yolov5', 'train.py');
-
-    // erform training Model using YOLOv5 on the data.yaml 
-    exec(`python3 ${train} --data data.yaml --weights yolov5x6.pt --epochs 10`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error executing YOLOv5: ${stderr}`);
-            return res.status(500).json({ error: 'Error performing training Model' });
-        }
-        console.log(stderr);
+    childProcess.on('close', (code) => {
+        // Close the SSE connection when the child process is done
+        res.end(`data: Process exited with code ${code}\n\n`);
     });
 
+    childProcess.on('error', (error) => {
+        console.error(`Error executing YOLOv5: ${error}`);
+        res.status(500).end(`data: Error performing training Model\n\n`);
+    });
 });
+
+
+app.get('/training-from-pretrained', (req, res) => {
+    const train = path.join(__dirname, 'yolov5', 'train.py');
+    
+    // Set up SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    
+    const cmd = `python3 ${train} --data data.yaml --weights yolov5x6.pt --epochs 10`;
+
+    const childProcess = exec(cmd);
+
+    childProcess.stderr.on('data', (data) => {
+        // Send stderr data as SSE messages
+        res.write(`data: ${data}\n\n`);
+    });
+
+    childProcess.on('close', (code) => {
+        // Close the SSE connection when the child process is done
+        res.end(`data: Process exited with code ${code}\n\n`);
+    });
+
+    childProcess.on('error', (error) => {
+        console.error(`Error executing YOLOv5: ${error}`);
+        res.status(500).end(`data: Error performing training Model\n\n`);
+    });
+});
+
+
 
 
 app.listen(3000, () => {
