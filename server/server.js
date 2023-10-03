@@ -7,6 +7,7 @@ const cors = require("cors");
 app.use(cors({ origin: true, credentials: true }));
 const bodyParser = require('body-parser');
 app.use(bodyParser.json({ limit: '10000mb' }));
+const multer = require('multer');
 
 // app.use(express.json());
 
@@ -16,31 +17,23 @@ app.get("/", (req, res) => {
     res.sendFile(path.resolve(__dirname, "client", "index.html"));
 });
 
-
 app.post('/save-captured-image', (req, res) => {
     const { image } = req.body;
-
     // Remove the data URL prefix (e.g., 'data:image/png;base64,')
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-
     // Create a unique filename or use a timestamp-based name
     const fileName = `captured_${Date.now()}.png`;
-
     // Specify the path to the "image" folder
     const imagePath = path.join(__dirname, 'image', fileName);
-
     // Write the base64 data to a PNG file
     fs.writeFile(imagePath, base64Data, 'base64', (err) => {
         if (err) {
             console.error('Error saving image:', err);
             return res.status(500).json({ error: 'Error saving image' });
         }
-
         console.log('Image saved successfully');
 
         const detect = path.join(__dirname, 'yolov5', 'detect.py');
-
-
         // Find the highest existing experiment number in the "yolov5/runs/detect" directory
         const detectDir = path.join(__dirname, 'yolov5', 'runs', 'detect');
         const existingExpFolders = fs.readdirSync(detectDir).filter(folder => folder.startsWith('exp'));
@@ -48,26 +41,83 @@ app.post('/save-captured-image', (req, res) => {
             const number = parseInt(folder.replace('exp', ''), 10);
             return number > max ? number : max;
         }, 0);
-
         const newExpFolder = `exp${highestExp + 1}`; // Increment the folder name
-
         const imagePer = path.join(__dirname, 'yolov5', 'runs', 'detect', newExpFolder, fileName);
-
-        // Perform object detection using YOLOv5 on the saved PNG file
-        exec(`python3 ${detect} --weights yolov5x6TTA.pt --source ${imagePath}`, (error, stdout, stderr) => {
+        // erform object detection using YOLOv5 on the saved PNG file
+        exec(`python3 ${detect} --weights yolov5x6.pt --source ${imagePath}`, (error, stdout, stderr) => {
             if (error) {
-                console.error(`Error executing YOLOv5: ${stderr}`); 
+                console.error(`Error executing YOLOv5: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing object detection' });
             }
             console.log(stderr);
-
             // Instead of reading the processed image from a file, you can directly convert it to base64
             const processedImageData = fs.readFileSync(imagePer, 'base64');
-
             // Send the processed image as base64 in the response
             return res.json({ processedImage: processedImageData });
         });
     });
+});
+
+
+
+app.post('/upload', (req, res) => {
+    const data = req.body; // Access JSON data from the request body
+
+    // Process the data as needed
+    const imageBase64 = data.imageBase64;
+    const labelBase64 = data.labelBase64;
+    const imageFileName = `${data.imageFileName}.png`; // Set the image file name with the '.png' extension
+    const labelFileName = `${data.labelFileName}.txt`; // Set the label file name with the '.txt' extension
+
+    // Function to convert Base64 to a file and save it
+    function base64ToFile(base64Data, filePath) {
+        const base64Image = base64Data.replace(/^data:image\/png;base64,/, ""); // Remove data URI prefix
+        const buffer = Buffer.from(base64Image, 'base64');
+        fs.writeFileSync(filePath, buffer);
+    }
+
+    // Generate file paths
+    const imageFilePath = path.join(__dirname, 'client', 'annotations', 'images', imageFileName);
+    const labelFilePath = path.join(__dirname, 'client', 'annotations', 'labels', labelFileName);
+
+    // Convert Base64 to files and save them
+    base64ToFile(imageBase64, imageFilePath);
+    base64ToFile(labelBase64, labelFilePath);
+
+    res.send('Files saved successfully on the server.');
+});
+
+
+app.get('/training-from-scratch', (req, res) => {
+
+    // python3 train.py --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10  
+    const train = path.join(__dirname, 'yolov5', 'train.py');
+
+    // erform training Model using YOLOv5 on the data.yaml 
+    exec(`python3 ${train} --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing YOLOv5: ${stderr}`);
+            return res.status(500).json({ error: 'Error performing training Model' });
+        }
+        console.log(stderr);
+    });
+
+});
+
+app.get('/training-from-scratch', (req, res) => {
+
+    // python3 train.py --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10  
+    const train = path.join(__dirname, 'yolov5', 'train.py');
+
+    // erform training Model using YOLOv5 on the data.yaml 
+    exec(`python3 ${train} --data data.yaml --weights yolov5x6.pt --epochs 10`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing YOLOv5: ${stderr}`);
+            return res.status(500).json({ error: 'Error performing training Model' });
+        }
+        console.log(stderr);
+    });
+
 });
 
 
