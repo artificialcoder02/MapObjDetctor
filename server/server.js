@@ -88,6 +88,38 @@ app.post('/upload', (req, res) => {
 });
 
 
+app.get('/training-from-scratch', (req, res) => {
+
+    // python3 train.py --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10  
+    const train = path.join(__dirname, 'yolov5', 'train.py');
+
+    // erform training Model using YOLOv5 on the data.yaml 
+    exec(`python3 ${train} --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing YOLOv5: ${stderr}`);
+            return res.status(500).json({ error: 'Error performing training Model' });
+        }
+        console.log(stderr);
+    });
+
+});
+
+app.get('/training-from-scratch', (req, res) => {
+
+    // python3 train.py --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10  
+    const train = path.join(__dirname, 'yolov5', 'train.py');
+
+    // erform training Model using YOLOv5 on the data.yaml 
+    exec(`python3 ${train} --data data.yaml --weights yolov5x6.pt --epochs 10`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing YOLOv5: ${stderr}`);
+            return res.status(500).json({ error: 'Error performing training Model' });
+        }
+        console.log(stderr);
+    });
+
+});
+
 
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
