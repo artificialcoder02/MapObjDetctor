@@ -123,11 +123,11 @@ function getLocation() {
 }
 
 function showPosition(position) {
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYXNoaXNoMDYxMyIsImEiOiJjbG1pdjJzc2kwMnc5M2ttdnJ6aHRqMzByIn0.c5WQIl_32AIvpF3xxQbrAg';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYXNoaXNoMDYxMyIsImEiOiJjbG51NndoZnYwYnN3MnFucDkwNHFkYms4In0.KfM4hlN5C1-aCEe8JVfEoQ';
     map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/ashish0613/cln332wie038l01qx0shq9ees',
-        center: [2.349014, 48.864716],
+        center: [-0.454295, 51.470020],
         zoom: 18
     });
 

@@ -45,16 +45,18 @@ app.post('/save-captured-image', (req, res) => {
 
         const detect = path.join(__dirname, 'yolov5', 'detect.py');
         // Find the highest existing experiment number in the "yolov5/runs/detect" directory
-        const detectDir = path.join(__dirname, 'yolov5', 'runs', 'detect');
-        const existingExpFolders = fs.readdirSync(detectDir).filter(folder => folder.startsWith('exp'));
+        const detectDir = path.join(__dirname, 'runs', 'detect');
+        const existingExpFolders = fs.readdirSync(detectDir).filter(folder => folder.startsWith('predict'));
         const highestExp = existingExpFolders.reduce((max, folder) => {
-            const number = parseInt(folder.replace('exp', ''), 10);
+            const number = parseInt(folder.replace('predict', ''), 10);
             return number > max ? number : max;
         }, 0);
-        const newExpFolder = `exp${highestExp + 1}`; // Increment the folder name
-        const imagePer = path.join(__dirname, 'yolov5', 'runs', 'detect', newExpFolder, fileName);
+        const newExpFolder = `predict${highestExp + 1}`; // Increment the folder name
+        const imagePer = path.join(__dirname, 'runs', 'detect', newExpFolder, fileName);
         // erform object detection using YOLOv5 on the saved PNG file
-        exec(`python3 ${detect} --weights yolov5x6.pt --source ${imagePath}`, (error, stdout, stderr) => {
+
+        // !yolo detect predict model='/Users/tuhinrc/Desktop/best_models/dota_3epch/best.pt' source='/Users/tuhinrc/Desktop/yolov8_testing/Screenshot 2023-10-16 at 11.46.08 AM.png' 
+        exec(`yolo detect predict model='/Users/ashish/Desktop/MapObjDetctor/server/best.pt' source='${imagePath}'`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing YOLOv5: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing object detection' });
