@@ -1,5 +1,3 @@
-
-
 var x = document.getElementById("demo");
 var map;
 let isLodind = false;
