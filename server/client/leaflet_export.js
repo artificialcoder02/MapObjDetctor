@@ -309,14 +309,14 @@
               downloadLink.download = fileName;
               downloadLink.href = blobUrl;
 
-              // IE requires link to be added into body.
-              document.body.appendChild(downloadLink);
+              // // IE requires link to be added into body.
+              // document.body.appendChild(downloadLink);
 
-              // Emit click to download image.
-              downloadLink.click();
+              // // Emit click to download image.
+              // downloadLink.click();
               
-              // Delete appended link.
-              document.body.removeChild(downloadLink);
+              // // Delete appended link.
+              // document.body.removeChild(downloadLink);
             }
 
             return `data:image/png;base64,${base64String}`;
