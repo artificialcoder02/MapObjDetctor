@@ -14,7 +14,7 @@ document.querySelector('.pop-button').addEventListener('click', function () {
 
 // Add click event listener to the capture button
 //document.querySelector('.close-button').addEventListener('click', function () {
-    //showPopup();
+//showPopup();
 //});
 function showPopup() {
     document.getElementById('popup').style.display = 'flex';
@@ -124,74 +124,90 @@ function showPosition(position) {
     // Create a Leaflet map and set the initial view
     map = L.map('map').setView([position.coords.latitude, position.coords.longitude], 18);
 
-    L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    // Create and add the tile layer
+    const tileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         maxZoom: 20,
-        crossOrigin : true,
+        crossOrigin: true,
         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
     }).addTo(map);
 
+    console.log(tileLayer)
+
     // Add a Leaflet marker at the user's location
     L.marker([position.coords.latitude, position.coords.longitude]).addTo(map);
-    L.control.bigImage({position: 'topright'}).addTo(map);
 }
+
 
 // Add click event listener to the "Detect Objects" button
 document.getElementById('detectButton').addEventListener('click', function () {
     captureMapAndSave();
 });
 
-function captureMapAndSave() {
-    // Show the loading spinner and hide the button
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    const detectButton = document.getElementById('detectButton');
-    loadingSpinner.style.display = 'block';
-    detectButton.style.display = 'none';
+async function captureMapAndSave() {
 
-    // Capture the Leaflet map using html2canvas
-    html2canvas(map.getContainer()).then(canvas => {
-        // Convert the canvas to a base64 data URL
-        const base64Data = canvas.toDataURL('image/png');
+    // Map tiles have finished loading, capture the map here
+    console.log('hell');
+    // // Show the loading spinner and hide the button
+    // const loadingSpinner = document.getElementById('loadingSpinner');
+    // const detectButton = document.getElementById('detectButton');
+    // loadingSpinner.style.display = 'block';
+    // detectButton.style.display = 'none';
 
-        // Create a download link for the captured image
-        const a = document.createElement('a');
-        a.href = base64Data;
-        a.download = 'map_capture.png';
-        document.body.appendChild(a);
+    // // Wait for the tiles to load
+    // await new Promise(resolve => {
+    //     const tileLayer = map._layers[Object.keys(map._layers)[1]]; // Adjust this to get the tile layer appropriately
+    //     tileLayer.on('load', () => resolve());
+    // });
 
-        // Send the base64Data to the server using an HTTP POST request
-        fetch('/save-captured-image', {
-            method: 'POST',
-            body: JSON.stringify({ image: base64Data }),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json(); // Parse the response body as JSON
-        }).then(data => {
-            // Hide the loading spinner and show the button again
-            loadingSpinner.style.display = 'none';
-            detectButton.style.display = 'block';
-            // Now, "data" should contain the processedImage as a base64 string
-            map.getContainer().style.display = 'none';
-            // Create the imgElement within the "upper_box" div
-            const imgElement = document.createElement('img');
-            imgElement.src = 'data:image/png;base64,' + data.processedImage;
+    // // Capture the Leaflet map using dom-to-image
+    const mapElement = document.getElementById('map'); // Replace with the correct map element ID
+    const width = mapElement.offsetWidth; // Use the map element's width
+    const height = mapElement.offsetHeight; // Use the map element's height
 
-            // Get the "image" div by its id and append the imgElement to it
-            const imageDiv = document.getElementById('image');
-            imageDiv.style.display = 'block';
-            imageDiv.appendChild(imgElement);
-        }).catch(error => {
-            console.error('Error:', error);
-            alert('Failed to save files on the server.');
-            loadingSpinner.style.display = 'none';
-            detectButton.style.display = 'block';
-        });
-    });
+    // // Capture the map as a PNG Data URL
+    const dataURL = await domtoimage.toPng(mapElement, { width, height });
+    console.log(dataURL);
+    // // Send the base64Data to the server using an HTTP POST request
+    // fetch('/save-captured-image', {
+    //     method: 'POST',
+    //     body: JSON.stringify({ image: dataURL }),
+    //     headers: {
+    //         'Content-Type': 'application/json',
+    //     },
+    // })
+    //     .then((response) => {
+    //         if (!response.ok) {
+    //             throw new Error('Network response was not ok');
+    //         }
+    //         return response.json(); // Parse the response body as JSON
+    //     })
+    //     .then((data) => {
+    //         // Hide the loading spinner and show the button again
+    //         loadingSpinner.style.display = 'none';
+    //         detectButton.style.display = 'block';
+
+    //         // Now, "data" should contain the processedImage as a base64 string
+    //         mapElement.style.display = 'none';
+
+    //         // Create the imgElement within the "upper_box" div
+    //         const imgElement = document.createElement('img');
+    //         imgElement.src = 'data:image/png;base64,' + data.processedImage;
+
+    //         // Get the "image" div by its id and append the imgElement to it
+    //         const imageDiv = document.getElementById('image');
+    //         imageDiv.style.display = 'block';
+    //         imageDiv.appendChild(imgElement);
+    //     })
+    //     .catch((error) => {
+    //         console.error('Error:', error);
+    //         alert('Failed to save files on the server.');
+    //         loadingSpinner.style.display = 'none';
+    //         detectButton.style.display = 'block';
+    //     });
+    //     // tileLayer.off('load');
+
 }
+
 
 const imageDiv = document.getElementById('image');
 
@@ -211,4 +227,4 @@ imageDiv.addEventListener('dblclick', function () {
     imageDiv.style.display = 'none';
 });
 
-//map.clearLayers();
+//map.triggerRepaint();

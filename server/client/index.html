@@ -11,8 +11,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
      crossorigin=""></script>
-    <link rel="stylesheet" href="dist/Leaflet.BigImage.min.css">
-    <script src="dist/Leaflet.BigImage.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.3.2/html2canvas.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <style>
@@ -34,7 +32,7 @@
     <div class="upper_box">
         <div id="titleBar">
             <!-- Title and buttons go here -->
-            <h1>SatelliteObjectDetective: Leaflet & YOLOv5 Integration</h1>
+            <h1>SatelliteObjectDetective: Leaflet & YOLOv8 Integration</h1>
             <div class="heading">
                 <!-- Add an HTML element for the loading spinner -->
                 <div class="lds-ellipsis" id="loadingSpinner" style="display: none;">
@@ -45,7 +43,7 @@
                 </div>
 
                 <!-- Add an HTML element for the "Detect Objects" button -->
-                <button id="detectButton" class="capture-button">Detect Objects</button>
+                <button id="detectButton" class="capture-button" onclick="captureMapAndSave()">Detect Objects</button>
                 <button class="pop-button">Add Annotations</button>
             </div>
         </div>
