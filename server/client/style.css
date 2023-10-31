@@ -64,7 +64,7 @@ body {
 .map {
     display: flex;
     border: #3498db 10px solid;
-    border-radius: 20px;
+    /* border-radius: 20px; */
     height: 92%;
     width: 100%;
 }

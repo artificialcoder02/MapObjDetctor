@@ -28,7 +28,9 @@ app.get("/pretrained", (req, res) => {
 });
 
 app.post('/save-captured-image', (req, res) => {
-    const { image } = req.body;
+    const { image, northWest, southEast } = req.body;
+    console.log(northWest, southEast);
+
     // Remove the data URL prefix (e.g., 'data:image/png;base64,')
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     // Create a unique filename or use a timestamp-based name
