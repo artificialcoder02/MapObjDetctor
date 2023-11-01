@@ -2,6 +2,8 @@ import argparse
 import json
 import geojson
 from ultralytics import YOLO
+from datetime import datetime
+import os
 
 def pixel_to_latlng(pixel_x, pixel_y, nw_lat, nw_lng, se_lat, se_lng, image_width, image_height):
     lat = nw_lat - ((nw_lat - se_lat) * (pixel_y / image_height))
@@ -37,7 +39,14 @@ def run_inference(model_path, source_image, nw_lat, nw_lng, se_lat, se_lng, imag
 
     return detections
 
-def detections_to_geojson(input_json):
+def detections_to_geojson(input_json, timestamp):
+    # Create a directory for GeoJSON files
+    output_folder = "geoj"
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Generate a unique filename based on the timestamp
+    output_filename = os.path.join(output_folder, f"output_{timestamp}.geojson")
+
     # Create a FeatureCollection to hold the GeoJSON features
     features = []
 
@@ -45,13 +54,15 @@ def detections_to_geojson(input_json):
         lat1, lng1, lat2, lng2 = item['lat1'], item['lng1'], item['lat2'], item['lng2']
         feature = geojson.Feature(
             geometry=geojson.Polygon([[(lng1, lat1), (lng1, lat2), (lng2, lat2), (lng2, lat1), (lng1, lat1)]]),
-            properties={"name": item["name"], "class": item["class"], "confidence": item["confidence"]}
+            properties={"name": item["name"], "class": item["class"], "confidence": item["confidence"]
+            }
         )
         features.append(feature)
 
     feature_collection = geojson.FeatureCollection(features)
 
-    return feature_collection
+    with open(output_filename, "w") as geojson_file:
+        geojson.dump(feature_collection, geojson_file)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run YOLOv8 object detection on a source image.")
@@ -65,8 +76,8 @@ if __name__ == "__main__":
     parser.add_argument("--image_height", required=True, type=int, help="Image height")
     args = parser.parse_args()
 
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")  # Generate a timestamp
+
     detections = run_inference(args.model, args.source, args.nw_lat, args.nw_lng, args.se_lat, args.se_lng, args.image_width, args.image_height)
 
-    geojson_output = detections_to_geojson(detections)
-    with open("output.geojson", "w") as geojson_file:
-        geojson.dump(geojson_output, geojson_file)
+    detections_to_geojson(detections, timestamp)
