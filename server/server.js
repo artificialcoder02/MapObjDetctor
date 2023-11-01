@@ -58,7 +58,7 @@ app.post('/save-captured-image', (req, res) => {
         // erform object detection using YOLOv5 on the saved PNG file
 
         // !yolo detect predict model='/Users/tuhinrc/Desktop/best_models/dota_3epch/best.pt' source='/Users/tuhinrc/Desktop/yolov8_testing/Screenshot 2023-10-16 at 11.46.08 AM.png' 
-        exec(`yolo detect predict model='/Users/ashish/Desktop/MapObjDetctor/server/best.pt' source='${imagePath}'`, (error, stdout, stderr) => {
+        exec(`yolo detect predict model='/Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt' source='${imagePath}'`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing YOLOv5: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing object detection' });
@@ -67,8 +67,20 @@ app.post('/save-captured-image', (req, res) => {
             // Instead of reading the processed image from a file, you can directly convert it to base64
             const processedImageData = fs.readFileSync(imagePer, 'base64');
             // Send the processed image as base64 in the response
-            return res.json({ processedImage: processedImageData });
+          
+            // return res.json({ processedImage: processedImageData });
         });
+
+        exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/server/yolov5/scripting.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/server/best.pt  --source '${imagePath}'`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing Script: ${stderr}`);
+                return res.status(500).json({ error: 'Error performing object detection' });ˀ
+            }
+            console.log('Script'+stderr);
+            // Instead of reading the processed image from a file, you can directly convert it to base64
+        });
+
+        
     });
 });
 
