@@ -2,7 +2,6 @@ import argparse
 import json
 import geojson
 from ultralytics import YOLO
-from datetime import datetime
 import os
 
 def pixel_to_latlng(pixel_x, pixel_y, nw_lat, nw_lng, se_lat, se_lng, image_width, image_height):
@@ -10,18 +9,23 @@ def pixel_to_latlng(pixel_x, pixel_y, nw_lat, nw_lng, se_lat, se_lng, image_widt
     lng = nw_lng + ((se_lng - nw_lng) * (pixel_x / image_width))
     return lat, lng
 
+def get_next_file_number(output_folder):
+    existing_files = os.listdir(output_folder)
+    existing_numbers = [
+        int(f.split("_")[1].split(".")[0])
+        for f in existing_files
+        if f.startswith("output_") and f.endswith(".geojson")
+    ]
+    next_file_number = max(existing_numbers) + 1 if existing_numbers else 1
+    return next_file_number
+
 def run_inference(model_path, source_image, nw_lat, nw_lng, se_lat, se_lng, image_width, image_height):
-    # Load the specified YOLOv8 model
     model = YOLO(model_path)
-
-    # Run inference on the specified image
     results = model(source_image)
-
-    # Process and save the results as GeoJSON with latitude and longitude
     detections = []
 
     for result in results:
-        pre = json.loads(result.tojson())  # Parse the string as JSON
+        pre = json.loads(result.tojson())
         for item in pre:
             box = item.get("box")
             x1 = box.get("x1")
@@ -39,23 +43,17 @@ def run_inference(model_path, source_image, nw_lat, nw_lng, se_lat, se_lng, imag
 
     return detections
 
-def detections_to_geojson(input_json, timestamp):
-    # Create a directory for GeoJSON files
-    output_folder = "geoj"
+def detections_to_geojson(input_json, output_folder):
     os.makedirs(output_folder, exist_ok=True)
-
-    # Generate a unique filename based on the timestamp
-    output_filename = os.path.join(output_folder, f"output_{timestamp}.geojson")
-
-    # Create a FeatureCollection to hold the GeoJSON features
+    file_number = get_next_file_number(output_folder)
+    output_filename = os.path.join(output_folder, f"output_{file_number}.geojson")
     features = []
 
     for item in input_json:
         lat1, lng1, lat2, lng2 = item['lat1'], item['lng1'], item['lat2'], item['lng2']
         feature = geojson.Feature(
             geometry=geojson.Polygon([[(lng1, lat1), (lng1, lat2), (lng2, lat2), (lng2, lat1), (lng1, lat1)]]),
-            properties={"name": item["name"], "class": item["class"], "confidence": item["confidence"]
-            }
+            properties={"name": item["name"], "class": item["class"], "confidence": item["confidence"]}
         )
         features.append(feature)
 
@@ -76,8 +74,7 @@ if __name__ == "__main__":
     parser.add_argument("--image_height", required=True, type=int, help="Image height")
     args = parser.parse_args()
 
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")  # Generate a timestamp
-
+    output_folder = "geoj"
     detections = run_inference(args.model, args.source, args.nw_lat, args.nw_lng, args.se_lat, args.se_lng, args.image_width, args.image_height)
 
-    detections_to_geojson(detections, timestamp)
+    detections_to_geojson(detections, output_folder)
