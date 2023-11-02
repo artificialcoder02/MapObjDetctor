@@ -86,10 +86,11 @@ app.post('/save-captured-image', (req, res) => {
             // Instead of reading the processed image from a file, you can directly convert it to base64
         });
 
-        // Read the directory
-        fs.readdir(directoryPath, (err, files) => {
+         // Read the directory
+         fs.readdir(directoryPath, (err, files) => {
             if (err) {
                 console.error('Error reading directory:', err);
+                return res.status(500).json({ error: 'Error reading directory' });
             } else {
                 // Filter the files with the pattern "output_<number>.geojson"
                 const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
@@ -102,21 +103,25 @@ app.post('/save-captured-image', (req, res) => {
                 // Get the latest file
                 const latestFile = geojsonFiles[0];
 
-
                 // Read the file and load the data into a variable
                 fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
                     if (err) {
                         console.error('Error reading file:', err);
+                        return res.status(500).json({ error: 'Error reading file' });
                     } else {
-                        const jsonData = JSON.parse(data); // assuming the file contains JSON data
-                        // Use the jsonData variable as required
-                        console.log('Loaded data:', jsonData);
-                        return res.json({ geojson : jsonData })
+                        try {
+                            const jsonData = JSON.parse(data); // assuming the file contains JSON data
+                            // Use the jsonData variable as required
+                            console.log('Loaded data:', jsonData);
+                            return res.json({ geojson: jsonData });
+                        } catch (error) {
+                            console.error('Error parsing JSON data:', error);
+                            return res.status(500).json({ error: 'Error parsing JSON data' });
+                        }
                     }
                 });
             }
         });
-
     });
 });
 

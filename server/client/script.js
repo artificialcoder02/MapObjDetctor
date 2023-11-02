@@ -195,20 +195,26 @@ function downloadMap(caption) {
             headers: {
                 'Content-Type': 'application/json'
             }
-        }).then((response) => {
-
-            console.log(response.geojson);
-            if (!response.ok) {
-                loadingSpinner.style.display = 'none';
-                detectButton.style.display = 'block';
-                throw new Error('Network response was not ok');
-            }else{
-                var myLayer = L.geoJSON().addTo(map);
-                myLayer.addData(geojsonFeature);
-            }
-
-            return response.json(); // Parse the response body as JSON
         })
+            .then((response) => {
+                console.log(response);
+                if (!response.ok) {
+                    loadingSpinner.style.display = 'none';
+                    detectButton.style.display = 'block';
+                    throw new Error('Network response was not ok');
+                }
+                return response.json(); // Parse the response body as JSON
+            })
+            .then((data) => {
+                // Handle the received data
+                console.log(data.geoJSON);
+                var myLayer = L.geoJSON().addTo(map);
+                myLayer.addData(data.geojson);
+            })
+            .catch((error) => {
+                // Handle any errors that occur during the fetch request or JSON parsing
+                console.error('Error:', error);
+            });
         return result;
     });
 }
