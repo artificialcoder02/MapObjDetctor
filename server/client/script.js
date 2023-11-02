@@ -187,7 +187,7 @@ function downloadMap(caption) {
 
         console.log('Northwest Coordinates:', northWest.lat, northWest.lng);
         console.log('Southeast Coordinates:', southEast.lat, southEast.lng);
-        
+
         // Send the base64Data to the server using an HTTP POST request
         fetch('/save-captured-image', {
             method: 'POST',
@@ -197,10 +197,14 @@ function downloadMap(caption) {
             }
         }).then((response) => {
 
+            console.log(response.geojson);
             if (!response.ok) {
                 loadingSpinner.style.display = 'none';
                 detectButton.style.display = 'block';
                 throw new Error('Network response was not ok');
+            }else{
+                var myLayer = L.geoJSON().addTo(map);
+                myLayer.addData(geojsonFeature);
             }
 
             return response.json(); // Parse the response body as JSON

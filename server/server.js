@@ -30,6 +30,12 @@ app.get("/pretrained", (req, res) => {
 app.post('/save-captured-image', (req, res) => {
     const { image, northWest, southEast } = req.body;
     console.log(northWest, southEast);
+    const fs = require('fs');
+    const path = require('path'); // Import the path module
+
+    const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
+
+
 
     // Remove the data URL prefix (e.g., 'data:image/png;base64,')
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
@@ -58,7 +64,7 @@ app.post('/save-captured-image', (req, res) => {
         // erform object detection using YOLOv5 on the saved PNG file
 
         // !yolo detect predict model='/Users/tuhinrc/Desktop/best_models/dota_3epch/best.pt' source='/Users/tuhinrc/Desktop/yolov8_testing/Screenshot 2023-10-16 at 11.46.08 AM.png' 
-        exec(`yolo detect predict model='/Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt' source='${imagePath}'`, (error, stdout, stderr) => {
+        exec(`yolo detect predict model='/Users/ashish/Desktop/MapObjDetctor/server/best.pt' source='${imagePath}'`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing YOLOv5: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing object detection' });
@@ -67,20 +73,50 @@ app.post('/save-captured-image', (req, res) => {
             // Instead of reading the processed image from a file, you can directly convert it to base64
             const processedImageData = fs.readFileSync(imagePer, 'base64');
             // Send the processed image as base64 in the response
-          
+
             // return res.json({ processedImage: processedImageData });
         });
 
-        exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/scripting.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/server/best.pt  --source ${imagePath} --nw_lat ${northWest.lat} --nw_lng ${northWest.lng} --se_lat ${southEast.lat} --se_lng ${southEast.lng} --image_width 1140 --image_height 687`, (error, stdout, stderr) => {
+        exec(`python3 /Users/ashish/Desktop/MapObjDetctor/scripts/scripting.py --model /Users/ashish/Desktop/MapObjDetctor/server/best.pt  --source ${imagePath} --nw_lat ${northWest.lat} --nw_lng ${northWest.lng} --se_lat ${southEast.lat} --se_lng ${southEast.lng} --image_width 1140 --image_height 687`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
-                return res.status(500).json({ error: 'Error performing object detection' });ˀ
+                return res.status(500).json({ error: 'Error performing object detection' }); ˀ
             }
             console.log(stdout);
             // Instead of reading the processed image from a file, you can directly convert it to base64
         });
 
-        
+        // Read the directory
+        fs.readdir(directoryPath, (err, files) => {
+            if (err) {
+                console.error('Error reading directory:', err);
+            } else {
+                // Filter the files with the pattern "output_<number>.geojson"
+                const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
+
+                // Sort the files by the creation time
+                geojsonFiles.sort((fileA, fileB) => {
+                    return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
+                });
+
+                // Get the latest file
+                const latestFile = geojsonFiles[0];
+
+
+                // Read the file and load the data into a variable
+                fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
+                    if (err) {
+                        console.error('Error reading file:', err);
+                    } else {
+                        const jsonData = JSON.parse(data); // assuming the file contains JSON data
+                        // Use the jsonData variable as required
+                        console.log('Loaded data:', jsonData);
+                        return res.json({ geojson : jsonData })
+                    }
+                });
+            }
+        });
+
     });
 });
 
@@ -116,11 +152,11 @@ app.post('/upload', (req, res) => {
 
 app.get('/training-from-scratch', (req, res) => {
     const train = path.join(__dirname, 'yolov5', 'train.py');
-    
+
     // Set up SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
-    
+
     const cmd = `python3 ${train} --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10`;
 
     const childProcess = exec(cmd);
@@ -144,11 +180,11 @@ app.get('/training-from-scratch', (req, res) => {
 
 app.get('/training-from-pretrained', (req, res) => {
     const train = path.join(__dirname, 'yolov5', 'train.py');
-    
+
     // Set up SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
-    
+
     const cmd = `python3 ${train} --data data.yaml --weights yolov5x6.pt --epochs 10`;
 
     const childProcess = exec(cmd);
