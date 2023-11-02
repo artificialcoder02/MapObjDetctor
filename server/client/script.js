@@ -187,6 +187,7 @@ function downloadMap(caption) {
 
         console.log('Northwest Coordinates:', northWest.lat, northWest.lng);
         console.log('Southeast Coordinates:', southEast.lat, southEast.lng);
+        
         // Send the base64Data to the server using an HTTP POST request
         fetch('/save-captured-image', {
             method: 'POST',
