@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parser.add_argument("--image_height", required=True, type=int, help="Image height")
     args = parser.parse_args()
 
-    output_folder = "geoj"
+    output_folder = "/Users/tuhinrc/Desktop/newnew/MapObjDetctor/geoj"
     detections = run_inference(args.model, args.source, args.nw_lat, args.nw_lng, args.se_lat, args.se_lng, args.image_width, args.image_height)
 
     detections_to_geojson(detections, output_folder)
