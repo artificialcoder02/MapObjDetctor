@@ -10,7 +10,120 @@ document.getElementById('training_btn').style.display = 'none';
 document.getElementById('training_btns').style.display = 'none';
 
 
-var centerPoint = [22.5176, 88.3965]; // Indian coordinates
+var centerPoint = [22.589659435441984, 88.41788365584796]; // Indian coordinates
+
+var geojsonFeature = {
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            88.41788365584796,
+                            22.589659435441984
+                        ],
+                        [
+                            88.41828946176449,
+                            22.589659435441984
+                        ],
+                        [
+                            88.41828946176449,
+                            22.588996751455213
+                        ],
+                        [
+                            88.41788365584796,
+                            22.588996751455213
+                        ],
+                        [
+                            88.41788365584796,
+                            22.589659435441984
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "name": "ground track field",
+                "class": 6,
+                "confidence": 0.6387652158737183
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            88.41792196466704,
+                            22.589584151184205
+                        ],
+                        [
+                            88.41828856238381,
+                            22.589584151184205
+                        ],
+                        [
+                            88.41828856238381,
+                            22.58907491170476
+                        ],
+                        [
+                            88.41792196466704,
+                            22.58907491170476
+                        ],
+                        [
+                            88.41792196466704,
+                            22.589584151184205
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "name": "ground track field",
+                "class": 6,
+                "confidence": 0.5804085731506348
+            }
+        },
+        {
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            88.4179338140077,
+                            22.589586225070175
+                        ],
+                        [
+                            88.41828031892908,
+                            22.589586225070175
+                        ],
+                        [
+                            88.41828031892908,
+                            22.589099663614213
+                        ],
+                        [
+                            88.4179338140077,
+                            22.589099663614213
+                        ],
+                        [
+                            88.4179338140077,
+                            22.589586225070175
+                        ]
+                    ]
+                ]
+            },
+            "properties": {
+                "name": "soccer ball field",
+                "class": 13,
+                "confidence": 0.47526705265045166
+            }
+        }
+    ]
+};
+
+
 
 // Create leaflet map.
 var baseExportOptions = {
@@ -25,7 +138,7 @@ var map = L.map('map', {
     editable: true,
     printable: true,
     downloadable: true,
-}).setView(centerPoint, 17);
+}).setView(centerPoint, 18);
 
 // Add OSM layer.
 // Create and add the tile layer
@@ -34,6 +147,7 @@ const tileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}
     crossOrigin: true,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
 }).addTo(map);
+
 // L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 //   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 // }).addTo(map);
@@ -46,6 +160,8 @@ for (var type in mimeTypes) {
     mimeArray.push(mimeTypes[type]);
 }
 // document.getElementById('supportedMimeTypes').innerHTML = mimeArray.join(', ');
+var myLayer = L.geoJSON().addTo(map);
+myLayer.addData(geojsonFeature);
 
 function downloadMap(caption) {
 
@@ -79,13 +195,13 @@ function downloadMap(caption) {
                 'Content-Type': 'application/json'
             }
         }).then((response) => {
-           
+
             if (!response.ok) {
                 loadingSpinner.style.display = 'none';
                 detectButton.style.display = 'block';
                 throw new Error('Network response was not ok');
             }
-            
+
             return response.json(); // Parse the response body as JSON
         })
         return result;
