@@ -132,6 +132,19 @@ app.post('/save-captured-image', (req, res) => {
     });
 });
 
+app.post('/generate-shapefile', (req, res) => {
+    // Execute your Python script here to generate the shapefile.
+    exec('python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/geotoshapconvertor.py', (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing Python script: ${stderr}`);
+            res.status(500).json({ error: 'Error generating shapefile' });
+        } else {
+            console.log('Shapefile generated successfully.');
+            // Respond to the client indicating success.
+            res.sendStatus(200);
+        }
+    });
+});
 
 
 app.post('/upload', (req, res) => {
