@@ -23,7 +23,7 @@ def detect_objects():
     snapshot_bytes = base64.b64decode(snapshot_data)
 
     # Define a path for a temporary image file
-    temp_image_path = '/Users/tuhinrc/Desktop/MapObjDetctor/temp_snapshot.jpg'
+    temp_image_path = 'temp_snapshot.jpg'
 
     # Save the image to a temporary file
     with open(temp_image_path, 'wb') as temp_image:
