@@ -36,3 +36,10 @@ yarn-error.log*
 *.jpeg
 *.jpeg
 *.png
+*.jpg
+*.pt
+/node_modules
+../node_modules
+/server/node_modules
+/server/yolov5
+
