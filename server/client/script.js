@@ -184,9 +184,13 @@ function downloadMap(caption) {
         var bounds = map.getBounds();
         var northWest = bounds.getNorthWest();
         var southEast = bounds.getSouthEast();
+        var northEast = bounds.getNorthEast();
+        var southWest = bounds.getSouthWest();
 
         console.log('Northwest Coordinates:', northWest.lat, northWest.lng);
         console.log('Southeast Coordinates:', southEast.lat, southEast.lng);
+        console.log('Northeast Coordinates:', northEast.lat, northEast.lng);
+        console.log('Southwest Coordinates:', southWest.lat, southWest.lng);
 
         // Send the base64Data to the server using an HTTP POST request
         fetch('/save-captured-image', {

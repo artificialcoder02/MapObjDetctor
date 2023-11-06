@@ -75,6 +75,15 @@ app.post('/save-captured-image', (req, res) => {
             // return res.json({ processedImage: processedImageData });
         });
 
+        exec(`gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${northWest.lat} ${northWest.lng} ${southEast.lat} ${southEast.lng}  ${imagePath} OUTPUT.tif`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing Script: ${stderr}`);
+                return res.status(500).json({ error: 'Error constructing tif file' }); ˀ
+            }
+            console.log(stdout);
+            // Instead of reading the processed image from a file, you can directly convert it to base64
+        });
+
         exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/scripting.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt --source ${imagePath} --nw_lat ${northWest.lat} --nw_lng ${northWest.lng} --se_lat ${southEast.lat} --se_lng ${southEast.lng} --image_width 1440 --image_height 687`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
