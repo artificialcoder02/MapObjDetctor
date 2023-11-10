@@ -105,14 +105,15 @@ app.post('/save-captured-image', (req, res) => {
         const geoTiffFileName = `${path.basename(imagePath, path.extname(imagePath))}.tif`; // Construct the GeoTIFF file name
         const geoTiffFilePath = path.join(__dirname, 'geot', geoTiffFileName); // Set the path for the GeoTIFF file
 
-        exec(`gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${northWest.lat} ${northWest.lng} ${southEast.lat} ${southEast.lng}  ${imagePath} ${geoTiffFilePath}`, (error, stdout, stderr) => {
+        exec(`gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${northWest.lng} ${northWest.lat} ${southEast.lng} ${southEast.lat} ${imagePath} ${geoTiffFilePath}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
-                return res.status(500).json({ error: 'Error constructing tif file' }); ˀ
+                return res.status(500).json({ error: 'Error constructing tif file' });
             }
             console.log(stdout);
             // Instead of reading the processed image from a file, you can directly convert it to base64
         });
+        
 
 
         // exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/scripting.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt --source ${imagePath} --nw_lat ${northWest.lat} --nw_lng ${northWest.lng} --se_lat ${southEast.lat} --se_lng ${southEast.lng} --image_width 1440 --image_height 687`, (error, stdout, stderr) => {
