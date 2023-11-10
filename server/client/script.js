@@ -1,5 +1,3 @@
-
-
 var x = document.getElementById("demo");
 var map;
 let isLodind = false;
@@ -107,6 +105,38 @@ function downloadMap(caption) {
         return result;
     });
 }
+
+/* Function to open the sidebar */
+function openNav(icon) {
+    let sidebar = document.getElementById("sidebar");
+    let sidebarContent = sidebar.querySelector('p');
+    if (sidebarContent) {
+      sidebarContent.innerText = `Content for ${icon}`;
+    } else {
+      sidebar.innerHTML = `<a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a><p>Content for ${icon}</p>`;
+    }
+    sidebar.style.width = "250px";
+  }
+  
+  /* Function to close the sidebar */
+  function closeNav() {
+    document.getElementById("sidebar").style.width = "0";
+  }
+  
+
+  function showLabel(labelId) {
+    const label = document.getElementById(labelId);
+    label.style.display = "block";
+    label.style.opacity = "1";
+}
+
+function hideLabel(labelId) {
+    const label = document.getElementById(labelId);
+    label.style.display = "none";
+    label.style.opacity = "0";
+}
+
+
 function showPopup() {
     document.getElementById('popup').style.display = 'flex';
 }
