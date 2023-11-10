@@ -6,6 +6,7 @@ import rasterio
 from osgeo import gdal
 from osgeo import osr
 from ultralytics import YOLO
+import random 
 
 
 def pixel_to_latlng(pixel_x, pixel_y, dataset):
@@ -78,6 +79,9 @@ def detections_to_geojson(input_json, output_folder):
     output_filename = os.path.join(output_folder, f"output_{file_number}.geojson")
     features = []
 
+    # Use a dictionary to store dynamically assigned colors for each class
+    class_color_mapping = {}
+
     for item in input_json:
         lat1, lng1, lat2, lng2 = item['lat1'], item['lng1'], item['lat2'], item['lng2']
 
@@ -90,9 +94,24 @@ def detections_to_geojson(input_json, output_folder):
             (lng1, lat1)  # Close the polygon
         ]
 
+        # Get the color based on the class from the mapping dictionary
+        color = class_color_mapping.get(item["class"])
+
+        # If the class doesn't have a color, generate a random color
+        if color is None:
+            color = "#{:06x}".format(random.randint(0, 0xFFFFFF))  # Random hex color
+
+            # Store the color in the mapping dictionary for future use
+            class_color_mapping[item["class"]] = color
+
         feature = geojson.Feature(
             geometry=geojson.Polygon([coordinates]),
-            properties={"name": item["name"], "class": item["class"], "confidence": item["confidence"]}
+            properties={
+                "name": item["name"],
+                "class": item["class"],
+                "confidence": item["confidence"],
+                "color": color  # Include color information
+            }
         )
         features.append(feature)
 
