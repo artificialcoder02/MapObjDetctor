@@ -126,7 +126,81 @@ function openNav(icon) {
   function closeNav() {
     document.getElementById("sidebar").style.width = "0";
   }
-  
+
+  async function updateIconContent() {
+    try {
+        const response = await fetch('/get-recent-geojson');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const detectedClasses = extractDetectedClasses(data.features); // Use data.features
+
+        // Update the content of the icons based on the detected classes
+        updateIconContentOnPage(detectedClasses);
+    } catch (error) {
+        console.error('Error fetching detected classes:', error);
+    }
+}
+
+function extractDetectedClasses(features) {
+    if (!features || !Array.isArray(features)) {
+        console.error('Invalid GeoJSON structure:', features);
+        return [];
+    }
+
+    const classes = features.map(feature => feature.properties.name);
+    return [...new Set(classes)];
+}
+
+function updateIconContentOnPage(detectedClasses) {
+    const iconBar = document.getElementById('iconBar');
+    
+    // Log the detected classes to the console
+    console.log('Detected Classes (updateIconContentOnPage):', detectedClasses);
+
+    // Remove existing icons
+    iconBar.innerHTML = '';
+
+    // Create new icons based on detected classes
+    for (let i = 1; i <= detectedClasses.length; i++) {
+        const icon = document.createElement('div');
+        icon.className = 'icon';
+        icon.onmouseover = () => showLabel(`label${i}`);
+        icon.onmouseout = () => hideLabel(`label${i}`);
+        
+        const anchor = document.createElement('a');
+        anchor.href = '#';
+        anchor.onclick = () => openNav(`icon${i}`);
+        
+        const iconElement = document.createElement('i');
+        iconElement.className = 'fas fa-chart-bar hoverss';
+
+        anchor.appendChild(iconElement);
+
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.id = `label${i}`;
+        
+        const paragraph = document.createElement('p');
+        paragraph.id = `content${i}`;
+        paragraph.textContent = detectedClasses[i - 1];
+        
+        label.appendChild(paragraph);
+        
+        icon.appendChild(anchor);
+        icon.appendChild(label);
+        
+        iconBar.appendChild(icon);
+    }
+}
+
+// Call the function to update icon content when the page loads
+window.onload = function () {
+    updateIconContent();
+};
 
   function showLabel(labelId) {
     const label = document.getElementById(labelId);

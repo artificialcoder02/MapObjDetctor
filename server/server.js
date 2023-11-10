@@ -197,6 +197,11 @@ function getRecentGeoJSON() {
     return jsonData;
 }
 
+app.get('/get-recent-geojson', (req, res) => {
+    // Your logic to fetch the most recent GeoJSON data
+    const recentGeoJSON = getRecentGeoJSON();
+    res.json(recentGeoJSON);
+});
 
 
 app.post('/generate-shapefile', (req, res) => {
