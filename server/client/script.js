@@ -197,21 +197,24 @@ function updateIconContentOnPage(detectedClasses) {
     }
 }
 
-// Call the function to update icon content when the page loads
-window.onload = function () {
+document.getElementById('exportBtn').addEventListener('click', function () {
     updateIconContent();
-};
+});
 
-  function showLabel(labelId) {
+function showLabel(labelId) {
     const label = document.getElementById(labelId);
-    label.style.display = "block";
-    label.style.opacity = "1";
+    if (label) {
+        label.style.display = "block";
+        label.style.opacity = "1";
+    }
 }
 
 function hideLabel(labelId) {
     const label = document.getElementById(labelId);
-    label.style.display = "none";
-    label.style.opacity = "0";
+    if (label) {
+        label.style.display = "none";
+        label.style.opacity = "0";
+    }
 }
 
 

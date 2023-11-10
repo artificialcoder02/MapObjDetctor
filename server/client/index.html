@@ -44,7 +44,7 @@
 </head>
 
 <body>
-    <div class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
+    <div id ="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
         <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
             <a href="#" onclick="openNav('icon1')"><i class="fas fa-chart-bar hoverss"></i></a>
             <div class="label" id="label1"><p>name1</p></div>
@@ -69,8 +69,7 @@
             <a href="#" onclick="openNav('icon6')"><i class="fas fa-chart-bar hoverss"></i></a>
             <div class="label" id="label6"><p>name6</p></div>
         </div>
-    </div>
-    
+    </div>    
     
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
