@@ -1,139 +1,156 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f5f5f5;
-}
-.heading{
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
 }
 
-.maps img{
-    max-width: 100%;
-    border-radius: 20px;
+.heading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.maps img {
+  max-width: 100%;
+  border-radius: 20px;
 }
 
 #titleBar {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    background-color: #3498db;
-    color: white;
-    text-align: center;
-    padding: 20px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: #3498db;
+  color: white;
+  text-align: center;
+  padding: 20px;
 }
 
 #titleBar h1 {
-    margin: 0;
-    font-size: 24px;
-    text-align: center; /* Center the h1 */
+  margin: 0;
+  font-size: 24px;
+  text-align: center;
+  /* Center the h1 */
 }
 
 #titleBar button {
-    padding: 10px 20px;
-    background-color: #2ecc71;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    margin: 10px; /* Add margin */
-    border-radius: 5px; /* Round corners */
-    transition: background-color 0.3s ease-in-out;
+  padding: 10px 20px;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 10px;
+  /* Add margin */
+  border-radius: 5px;
+  /* Round corners */
+  transition: background-color 0.3s ease-in-out;
 }
 
 #titleBar button:hover {
-    background-color: #27ae60;
+  background-color: #27ae60;
 }
 
 #titleBar button:active {
-    background-color: #1abc9c;
+  background-color: #1abc9c;
 }
 
 
 .upper_box {
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    align-items: flex-end;
-    height: 100vh;
-    margin-left: 20px;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: flex-end;
+  height: 100vh;
+  margin-left: 20px;
 }
 
 .map {
-    display: flex;
-    border: #3498db 10px solid;
-    /* border-radius: 20px; */
-    height: 92%;
-    width: 100%;
+  display: flex;
+  border: #3498db 10px solid;
+  /* border-radius: 20px; */
+  height: 92%;
+  width: 100%;
+  z-index: 1;
 }
+
 .maps {
-    display: flex;
-    border-radius: 20px;
-    margin-right: 20px;
+  display: flex;
+  border-radius: 20px;
+  margin-right: 20px;
 }
 
 
 .lds-ellipsis {
-    display: inline-block;
-    position: relative;
-    width: 80px;
-    height: 56px;
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 56px;
+}
+
+.lds-ellipsis div {
+  position: absolute;
+  top: 24px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+
+.lds-ellipsis div:nth-child(1) {
+  left: 8px;
+  animation: lds-ellipsis1 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(2) {
+  left: 8px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(3) {
+  left: 32px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(4) {
+  left: 56px;
+  animation: lds-ellipsis3 0.6s infinite;
+}
+
+@keyframes lds-ellipsis1 {
+  0% {
+    transform: scale(0);
   }
-  .lds-ellipsis div {
-    position: absolute;
-    top: 24px;
-    width: 13px;
-    height: 13px;
-    border-radius: 50%;
-    background: #fff;
-    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+
+  100% {
+    transform: scale(1);
   }
-  .lds-ellipsis div:nth-child(1) {
-    left: 8px;
-    animation: lds-ellipsis1 0.6s infinite;
+}
+
+@keyframes lds-ellipsis3 {
+  0% {
+    transform: scale(1);
   }
-  .lds-ellipsis div:nth-child(2) {
-    left: 8px;
-    animation: lds-ellipsis2 0.6s infinite;
+
+  100% {
+    transform: scale(0);
   }
-  .lds-ellipsis div:nth-child(3) {
-    left: 32px;
-    animation: lds-ellipsis2 0.6s infinite;
+}
+
+@keyframes lds-ellipsis2 {
+  0% {
+    transform: translate(0, 0);
   }
-  .lds-ellipsis div:nth-child(4) {
-    left: 56px;
-    animation: lds-ellipsis3 0.6s infinite;
+
+  100% {
+    transform: translate(24px, 0);
   }
-  @keyframes lds-ellipsis1 {
-    0% {
-      transform: scale(0);
-    }
-    100% {
-      transform: scale(1);
-    }
-  }
-  @keyframes lds-ellipsis3 {
-    0% {
-      transform: scale(1);
-    }
-    100% {
-      transform: scale(0);
-    }
-  }
-  @keyframes lds-ellipsis2 {
-    0% {
-      transform: translate(0, 0);
-    }
-    100% {
-      transform: translate(24px, 0);
-    }
-  }
+}
 
 
 
-  /* .overlay {
+/* .overlay {
     display: none;
     position: fixed;
     top: 0;
@@ -173,8 +190,8 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); 
-  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1002;
 }
 
 .popup {
@@ -231,7 +248,7 @@ body {
   background-color: #2980b9;
 }
 
-.center_input{
+.center_input {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -280,7 +297,7 @@ body {
   background-color: #2980b9;
 }
 
-.button_center{
+.button_center {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -288,24 +305,121 @@ body {
 }
 
 
-.traing_btn{
+.traing_btn {
   display: flex;
   justify-content: center;
   align-items: center;
   padding-top: 10px;
 }
 
-.download-button {
-  display: inline-block;
-  padding: 10px 20px;
-  background-color: #3498db;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+
+.icon-bar::-webkit-scrollbar{
+  display: none !important;
 }
 
-.download-button:hover {
-  background-color: #258ccc;
+/* Your existing CSS code */
+/* Your existing CSS code */
+
+/* Icon bar styling */
+.icon-bar {
+  position: fixed;
+  left: 19px;
+  top: 61% !important;
+  overflow-y: scroll;
+  height: 68vh !important;
+  transform: translateY(-50%);
+}
+
+.icon-bar .icon {
+  display: flex;
+  align-items: center;
+  width: 20vh;
+
+}
+
+.icon-bar a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  border-radius: 50%;
+  transition: all 0.3s;
+  color: #ffffff;
+  font-size: 20px;
+  background: #3498db;
+  margin: 5px;
+  text-decoration: none;
+}
+.icon-bar .icon .label {
+  display: none;
+  position: absolute;
+  margin-top: 21px;
+  left: 95px;
+  transform: translate(-50%, -50%);
+  background: #3498db;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 5px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+}
+
+.icon-bar .icon .label p {
+  margin: 0;
+  padding: 0;
+}
+
+.icon-bar .icon .label::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 100%; /* Places the triangle on the left */
+  margin-top: -5px; /* Half the height of the triangle */
+  border-width: 5px;
+  border-style: solid;
+  border-color: transparent #3498db transparent transparent;
+}
+
+.icon-bar .icon a:hover + .label {
+  display: block;
+  opacity: 1;
+}
+
+/* Sidebar styling */
+.sidebar {
+  height: 100%;
+  width: 0;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: #f5f5f5;
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding-top: 60px;
+}
+
+.sidebar a {
+  padding: 8px 8px 8px 32px;
+  text-decoration: none;
+  font-size: 20px;
+  color: #818181;
+  display: block;
+  transition: 0.3s;
+}
+
+.sidebar a:hover {
+  color: #000;
+}
+
+.closebtn {
+  position: absolute;
+  top: 10px;
+  right: 25px;
+  font-size: 36px;
+  margin-left: 50px;
 }

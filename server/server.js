@@ -4,12 +4,40 @@ const fs = require('fs');
 const { exec } = require('child_process');
 const path = require('path');
 const cors = require("cors");
+const sizeOf = require('image-size');
 app.use(cors({ origin: true, credentials: true }));
 const bodyParser = require('body-parser');
 app.use(bodyParser.json({ limit: '10000mb' }));
 const multer = require('multer');
 
 // app.use(express.json());
+
+// Directory where image files are stored
+const imageFolder = '/Users/tuhinrc/Desktop/newnew/MapObjDetctor/server/image';
+
+// Get a list of image files in the folder
+const imageFiles = fs.readdirSync(imageFolder).filter(file => file.endsWith('.png'));
+
+// Sort the list of image files by creation time (most recent first)
+imageFiles.sort((fileA, fileB) => {
+    return fs.statSync(path.join(imageFolder, fileB)).ctime.getTime() - fs.statSync(path.join(imageFolder, fileA)).ctime.getTime();
+});
+
+// Check if there are any image files in the folder
+if (imageFiles.length === 0) {
+    console.error('No image files found in the folder.');
+    return res.status(500).json({ error: 'No image files found' });
+}
+
+// Choose the most recent image file
+const mostRecentImage = path.join(imageFolder, imageFiles[0]);
+
+// Get the image dimensions synchronously
+const dimensions = sizeOf(mostRecentImage);
+
+// Extract the width and height
+const imageWidth = dimensions.width;
+const imageHeight = dimensions.height;
 
 // Serve the HTML file for the root URL
 app.use(express.static("client"));
@@ -74,21 +102,35 @@ app.post('/save-captured-image', (req, res) => {
 
             // return res.json({ processedImage: processedImageData });
         });
+        const geoTiffFileName = `${path.basename(imagePath, path.extname(imagePath))}.tif`; // Construct the GeoTIFF file name
+        const geoTiffFilePath = path.join(__dirname, 'geot', geoTiffFileName); // Set the path for the GeoTIFF file
 
-        exec(`gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${northWest.lat} ${northWest.lng} ${southEast.lat} ${southEast.lng}  ${imagePath} OUTPUT.tif`, (error, stdout, stderr) => {
+        exec(`gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${northWest.lng} ${northWest.lat} ${southEast.lng} ${southEast.lat} ${imagePath} ${geoTiffFilePath}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
-                return res.status(500).json({ error: 'Error constructing tif file' }); ˀ
+                return res.status(500).json({ error: 'Error constructing tif file' });
             }
             console.log(stdout);
             // Instead of reading the processed image from a file, you can directly convert it to base64
         });
+        
 
-        exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/scripting.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt --source ${imagePath} --nw_lat ${northWest.lat} --nw_lng ${northWest.lng} --se_lat ${southEast.lat} --se_lng ${southEast.lng} --image_width 1440 --image_height 687`, (error, stdout, stderr) => {
+
+        // exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/scripting.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt --source ${imagePath} --nw_lat ${northWest.lat} --nw_lng ${northWest.lng} --se_lat ${southEast.lat} --se_lng ${southEast.lng} --image_width 1440 --image_height 687`, (error, stdout, stderr) => {
+        //     if (error) {
+        //         console.error(`Error executing Script: ${stderr}`);
+        //         return res.status(500).json({ error: 'Error performing object detection' }); ˀ
+        //     }
+        //     console.log(stdout);
+        //     // Instead of reading the processed image from a file, you can directly convert it to base64
+        // });
+
+        exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/tiffer.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt --source ${geoTiffFilePath}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
-                return res.status(500).json({ error: 'Error performing object detection' }); ˀ
+                return res.status(500).json({ error: 'Error performing latlong conversion' }); ˀ
             }
+            //console.log(geoTiffFilePath);
             console.log(stdout);
             // Instead of reading the processed image from a file, you can directly convert it to base64
         });
@@ -132,6 +174,44 @@ app.post('/save-captured-image', (req, res) => {
     });
 });
 
+// Function to read and parse the most recent GeoJSON file
+function getRecentGeoJSON() {
+    const directoryPath = '/Users/tuhinrc/Desktop/newnew/MapObjDetctor/geoj';
+
+    // Read the directory
+    const files = fs.readdirSync(directoryPath);
+
+    // Filter the files with the pattern "output_<number>.geojson"
+    const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
+
+    // Sort the files by the creation time
+    geojsonFiles.sort((fileA, fileB) => {
+        return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
+    });
+
+    // Get the latest file
+    const latestFile = geojsonFiles[0];
+
+    // Read the file and load the data into a variable
+    const jsonData = JSON.parse(fs.readFileSync(path.join(directoryPath, latestFile), 'utf8'));
+    return jsonData;
+}
+
+
+
+app.post('/generate-shapefile', (req, res) => {
+    // Execute your Python script here to generate the shapefile.
+    exec('python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/geotoshapconvertor.py', (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error executing Python script: ${stderr}`);
+            res.status(500).json({ error: 'Error generating shapefile' });
+        } else {
+            console.log('Shapefile generated successfully.');
+            // Respond to the client indicating success.
+            res.sendStatus(200);
+        }
+    });
+});
 
 
 app.post('/upload', (req, res) => {

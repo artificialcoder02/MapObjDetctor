@@ -12,6 +12,7 @@
     <script src="../vendor/leaflet_1_0_0_rc2/leaflet-src.js"></script>
     <script src="../vendor/Leaflet.Editable.js"></script>
     <script src="../vendor/html2canvas/html2canvas.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <script src="../vendor/leaflet.editable.measure/leaflet_measure.js"></script>
 
@@ -42,7 +43,39 @@
     </style>
 </head>
 
-<body >
+<body>
+    <div class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
+        <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
+            <a href="#" onclick="openNav('icon1')"><i class="fas fa-chart-bar hoverss"></i></a>
+            <div class="label" id="label1"><p>name1</p></div>
+        </div>
+        <div class="icon" onmouseover="showLabel('label2')" onmouseout="hideLabel('label2')">
+            <a href="#" onclick="openNav('icon2')"><i class="fas fa-chart-bar hoverss"></i></a>
+            <div class="label" id="label2"><p>name2</p></div>
+        </div>
+        <div class="icon" onmouseover="showLabel('label3')" onmouseout="hideLabel('label3')">
+            <a href="#" onclick="openNav('icon3')"><i class="fas fa-chart-bar hoverss"></i></a>
+            <div class="label" id="label3"><p>name3</p></div>
+        </div>
+        <div class="icon" onmouseover="showLabel('label4')" onmouseout="hideLabel('label4')">
+            <a href="#" onclick="openNav('icon4')"><i class="fas fa-chart-bar hoverss"></i></a>
+            <div class="label" id="label4"><p>name4</p></div>
+        </div>
+        <div class="icon" onmouseover="showLabel('label5')" onmouseout="hideLabel('label5')">
+            <a href="#" onclick="openNav('icon5')"><i class="fas fa-chart-bar hoverss"></i></a>
+            <div class="label" id="label5"><p>name5</p></div>
+        </div>
+        <div class="icon" onmouseover="showLabel('label6')" onmouseout="hideLabel('label6')">
+            <a href="#" onclick="openNav('icon6')"><i class="fas fa-chart-bar hoverss"></i></a>
+            <div class="label" id="label6"><p>name6</p></div>
+        </div>
+    </div>
+    
+    
+    <div id="sidebar" class="sidebar">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <!-- Sidebar content here -->
+    </div>
 
     <div class="upper_box">
         <div id="titleBar">
@@ -60,18 +93,16 @@
                 <!-- Add an HTML element for the "Detect Objects" button -->
                 <button id="exportBtn" onclick="downloadMap()" class="capture-button">Detect Objects</button>
                 <button class="pop-button" onclick="showPopup()">Add Annotations</button>
-                <button id="downloadShapefileButton" onclick="downloadShapefile()" class="download-button">Download Shapefile</button>
             </div>
         </div>
         <!-- <button class="capture-button">Capture and Save</button> -->
 
-        <div id="map" class="map"></div>
+        <div id="map" class="map" style="z-index: 1;"></div>
         <div id="image" class="maps" style="display: none;">
         </div>
 
 
     </div>
-
     <!-- The Pop-up -->
     <div id="popup">
         <div class="popup">
@@ -99,7 +130,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="./script.js"></script>
 
 </body>
