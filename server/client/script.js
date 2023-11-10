@@ -43,9 +43,6 @@ for (var type in mimeTypes) {
     mimeArray.push(mimeTypes[type]);
 }
 
-var myLayer = L.geoJSON().addTo(map);
-myLayer.addData(geojsonFeature);
-
 function downloadMap(caption) {
 
     var downloadOptions = {
@@ -95,8 +92,15 @@ function downloadMap(caption) {
             .then((data) => {
                 // Handle the received data
                 console.log(data.geoJSON);
-                var myLayer = L.geoJSON().addTo(map);
-                myLayer.addData(data.geojson);
+                var myLayer = L.geoJSON(data.geojson, {
+                    style: function (feature) {
+                        return {
+                            color: feature.properties.color || '#000000',  // Default to black if color is not specified
+                            weight: 2,
+                            opacity: 1
+                        };
+                    }
+                }).addTo(map);
             })
             .catch((error) => {
                 // Handle any errors that occur during the fetch request or JSON parsing
