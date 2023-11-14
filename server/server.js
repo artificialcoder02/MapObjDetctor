@@ -219,6 +219,42 @@ app.post('/generate-shapefile', (req, res) => {
 });
 
 
+app.get('/get-geojson-by-class', (req, res) => {
+    const recentGeoJSON = getRecentGeoJSON();
+
+    if (!recentGeoJSON || !recentGeoJSON.features || recentGeoJSON.features.length === 0) {
+        return res.status(500).json({ error: 'No GeoJSON data available.' });
+    }
+
+    // Extract class names from the GeoJSON features
+    const classNames = recentGeoJSON.features.map(feature => feature.properties.name);
+
+    // Get class names from the request query
+    const requestedClassNames = req.query.classNames;
+
+    if (!requestedClassNames || !Array.isArray(requestedClassNames) || requestedClassNames.length === 0) {
+        return res.status(400).json({ error: 'Class names parameter is missing or invalid.' });
+    }
+
+    // Filter GeoJSON data by requested class names
+    const filteredGeoJSON = filterGeoJSONByClass(recentGeoJSON, requestedClassNames);
+
+    res.json({ geojson: filteredGeoJSON });
+});
+
+// Function to filter GeoJSON data by class name
+function filterGeoJSONByClass(geoJSON, classNames) {
+    const filteredFeatures = geoJSON.features.filter(feature => {
+        const featureClass = feature.properties.name.toLowerCase();
+        return classNames.includes(featureClass.toLowerCase());
+    });
+
+    return {
+        type: 'FeatureCollection',
+        features: filteredFeatures
+    };
+}
+
 app.post('/upload', (req, res) => {
     const data = req.body; // Access JSON data from the request body
 

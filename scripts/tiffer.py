@@ -53,7 +53,8 @@ def run_inference(model_path, source_image):
 
     for result in results:
         pre = json.loads(result.tojson())
-        print(pre)
+
+        #print(pre)
         for item in pre:
             box = item.get("box")
             x1 = box.get("x1")
