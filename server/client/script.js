@@ -10,6 +10,9 @@ document.getElementById('training_btns').style.display = 'none';
 
 var centerPoint = [22.589659435441984, 88.41788365584796]; // Indian coordinates
 
+// Global variable to store GeoJSON layers
+const geoJsonLayers = {};
+
 // Create leaflet map.
 var baseExportOptions = {
     caption: {
@@ -121,7 +124,6 @@ function openNav(icon) {
     }
     sidebar.style.width = "250px";
   }
-  
   /* Function to close the sidebar */
   function closeNav() {
     document.getElementById("sidebar").style.width = "0";
@@ -155,7 +157,53 @@ function extractDetectedClasses(features) {
     return [...new Set(classes)];
 }
 
-function updateIconContentOnPage(detectedClasses) {
+// Function to toggle the visibility of a GeoJSON layer
+function toggleLayerVisibility(className) {
+    const layer = geoJsonLayers[className];
+    if (layer) {
+        if (map.hasLayer(layer)) {
+            map.removeLayer(layer);
+        } else {
+            map.addLayer(layer);
+        }
+    } else {
+        // If the layer doesn't exist, fetch and add it
+        updateGeoJSONLayer(className);
+    }
+}
+
+// Function to update GeoJSON layer for a specific class
+async function updateGeoJSONLayer(className) {
+    try {
+        const response = await fetch(`/get-geojson-by-class?classNames=${encodeURIComponent(className)}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const layer = L.geoJSON(data.geojson, {
+            style: function (feature) {
+                return {
+                    color: feature.properties.color || '#000000',
+                    weight: 2,
+                    opacity: 1
+                };
+            }
+        });
+
+        geoJsonLayers[className] = layer;
+
+        // Add the new layer to the map if the layer should be visible
+        if (map.hasLayer(layer)) {
+            map.addLayer(layer);
+        }
+    } catch (error) {
+        console.error('Error updating GeoJSON layer:', error);
+    }
+}
+
+function updateIconContentOnPage(detectedClasses, geojsonData) {
     const iconBar = document.getElementById('iconBar');
     
     // Log the detected classes to the console
@@ -194,6 +242,26 @@ function updateIconContentOnPage(detectedClasses) {
         icon.appendChild(label);
         
         iconBar.appendChild(icon);
+
+        // Create GeoJSON layer for each class only if it doesn't exist
+        if (!geoJsonLayers[detectedClasses[i - 1]]) {
+            geoJsonLayers[detectedClasses[i - 1]] = L.geoJSON([], {
+                style: function (feature) {
+                    return {
+                        color: feature.properties.color || '#000000',
+                        weight: 2,
+                        opacity: 1
+                    };
+                }
+            }).addTo(map);
+        }
+
+        anchor.onclick = () => {
+            openNav(`icon${i}`);
+            toggleLayerVisibility(detectedClasses[i - 1]);
+            updateGeoJSONLayer(detectedClasses[i - 1]);
+        };
+
     }
 }
 

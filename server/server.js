@@ -230,9 +230,12 @@ app.get('/get-geojson-by-class', (req, res) => {
     const classNames = recentGeoJSON.features.map(feature => feature.properties.name);
 
     // Get class names from the request query
-    const requestedClassNames = req.query.classNames;
+    let requestedClassNames = req.query.classNames;
 
-    if (!requestedClassNames || !Array.isArray(requestedClassNames) || requestedClassNames.length === 0) {
+    // Ensure requestedClassNames is always an array
+    requestedClassNames = Array.isArray(requestedClassNames) ? requestedClassNames : [requestedClassNames];
+
+    if (!requestedClassNames || requestedClassNames.length === 0) {
         return res.status(400).json({ error: 'Class names parameter is missing or invalid.' });
     }
 
