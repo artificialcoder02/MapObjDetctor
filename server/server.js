@@ -275,8 +275,8 @@ app.post('/upload', (req, res) => {
     }
 
     // Generate file paths
-    const imageFilePath = path.join(__dirname, 'client', 'annotations', 'images', imageFileName);
-    const labelFilePath = path.join(__dirname, 'client', 'annotations', 'labels', labelFileName);
+    const imageFilePath = path.join(__dirname, 'annotations', 'images', imageFileName);
+    const labelFilePath = path.join(__dirname, 'annotations', 'labels', labelFileName);
 
     // Convert Base64 to files and save them
     base64ToFile(imageBase64, imageFilePath);

@@ -36,6 +36,7 @@ const tileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
 }).addTo(map);
 
+L.control.scale().addTo(map);
 
 // Create custom measure tools instances.
 var measure = L.measureBase(map, {});
@@ -155,6 +156,8 @@ function extractDetectedClasses(features) {
 
     const classes = features.map(feature => feature.properties.name);
     return [...new Set(classes)];
+    const color = features.map(feature => feature.properties.color);
+    return [...new Set(color)];
 }
 
 // Function to toggle the visibility of a GeoJSON layer
@@ -182,26 +185,28 @@ async function updateGeoJSONLayer(className) {
         }
 
         const data = await response.json();
-        const layer = L.geoJSON(data.geojson, {
-            style: function (feature) {
-                return {
-                    color: feature.properties.color || '#000000',
-                    weight: 2,
-                    opacity: 1
-                };
-            }
-        });
+        const layer = geoJsonLayers[className];
 
-        geoJsonLayers[className] = layer;
+        // Ensure the GeoJSON structure is properly handled
+        if (data.geojson && data.geojson.features && Array.isArray(data.geojson.features)) {
+            // Add new data
+            layer.clearLayers();
+            layer.addData(data.geojson);
 
-        // Add the new layer to the map if the layer should be visible
-        if (map.hasLayer(layer)) {
-            map.addLayer(layer);
+            // Clear existing layers
+            map.eachLayer((l) => {
+                if (l instanceof L.GeoJSON && l !== layer) {
+                    map.removeLayer(l);
+                }
+            });
+        } else {
+            console.error('Invalid GeoJSON structure:', data.geojson);
         }
     } catch (error) {
         console.error('Error updating GeoJSON layer:', error);
     }
 }
+
 
 function updateIconContentOnPage(detectedClasses, geojsonData) {
     const iconBar = document.getElementById('iconBar');
@@ -225,6 +230,10 @@ function updateIconContentOnPage(detectedClasses, geojsonData) {
         
         const iconElement = document.createElement('i');
         iconElement.className = 'fas fa-chart-bar hoverss';
+
+        // Assuming color information is available in detectedClasses
+        const iconColor = detectedClasses[i - 1].color || '#000000'; // Default to black if color is not specified
+        iconElement.style.color = iconColor;
 
         anchor.appendChild(iconElement);
 
@@ -389,6 +398,26 @@ function updateLabelLabel() {
     }
 }
 
+// function downloadShapefile() {
+//     // Send an HTTP request to the server to generate the shapefile.
+//     fetch('/generate-shapefile', {
+//         method: 'POST',
+//     })
+//     .then(response => {
+//         if (response.ok) {
+//             // The server successfully generated the shapefile.
+//             console.log('The server successfully generated the shapefile.')
+//         } else {
+//             // Handle errors.
+//             console.error('Failed to generate shapefile.');
+//         }
+//     })
+//     .catch(error => {
+//         // Handle network or other errors.
+//         console.error('Request error:', error);
+//     });
+// }
+
 function downloadShapefile() {
     // Send an HTTP request to the server to generate the shapefile.
     fetch('/generate-shapefile', {
@@ -397,11 +426,23 @@ function downloadShapefile() {
     .then(response => {
         if (response.ok) {
             // The server successfully generated the shapefile.
-            console.log('The server successfully generated the shapefile.')
+            return response.blob(); // Convert response to a Blob
         } else {
             // Handle errors.
             console.error('Failed to generate shapefile.');
+            throw new Error('Failed to generate shapefile.'); // Propagate the error
         }
+    })
+    .then(blob => {
+        // Create a download link
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'shapefile.zip'; // Set the desired file name
+        document.body.appendChild(a); // Append the link to the document
+        a.click(); // Simulate a click on the link to trigger the download
+        document.body.removeChild(a); // Remove the link from the document
+        console.log('Download initiated successfully.');
     })
     .catch(error => {
         // Handle network or other errors.
