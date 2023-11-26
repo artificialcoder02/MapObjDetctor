@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Center horizontally */
+            height: 100vh !important;
+        }
+
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .verification-code {
+            font-size: 24px;
+            color: #007bff;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .container a {
+            text-decoration: none;
+        }
+    </style>
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10.15.7/dist/sweetalert2.min.css">
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10.15.7/dist/sweetalert2.all.min.js"></script>
+</head>
+
+<body style="height: 100vh !important;">
+    <div class="container">
+        <h2>Email Verification</h2>
+        <p>Thank you for signing up. Please click the button below to Verify User</p>
+        <a href="#" id="verifyLink" class="btn" onclick="verifyUser(); return false;">Verify Email</a>
+    </div>
+    <script>
+        // Function to extract the verification token from the URL
+        function extractTokenFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('verificationToken');
+            return token;
+        }
+
+        // Function to verify the user using the API
+        function verifyUser() {
+            // Extract the token from the URL
+            const verificationToken = extractTokenFromURL();
+
+            // Make the API call
+            fetch(`http://localhost:3000/api/v0.1/verify/${verificationToken}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Add any other headers as needed
+                },
+            })
+                .then(response => {
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.message) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Verification Failed',
+                            text: data.message,
+                        }).then((result) => {
+                            // Check if the "OK" button is clicked
+                            if (result.isConfirmed) {
+                                // Redirect to the home page or any other desired page
+                                window.location.href = "/"; // Change the URL accordingly
+                            }else{
+                                window.location.href = "/"; // Change the URL accordingly
+                            }
+                        });
+
+                        return;
+                    } else {
+                        // Display success message using SweetAlert2
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Verification Successful',
+                            text: 'Your email has been successfully verified!',
+                        }).then((result) => {
+                            // Check if the "OK" button is clicked
+                            if (result.isConfirmed) {
+                                // Redirect to the home page or any other desired page
+                                window.location.href = "/"; // Change the URL accordingly
+                            }else{
+                                window.location.href = "/"; // Change the URL accordingly
+                            }
+                        });
+                    }
+                })
+        }
+    </script>
+</body>
+
+</html>

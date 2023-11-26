@@ -23,7 +23,7 @@ router.post('/forgot-password', UserController.forgotPassword);
 router.post('/reset-password', UserController.resetPassword);
 
 // Verify User Route
-router.get('/verify-user/:verificationToken', UserController.verifyUser);
+router.get('/verify/:verificationToken', UserController.verifyUser);
 
 // Check Login Status Route
 router.get('/check-login-status', UserController.checkLoginStatus);

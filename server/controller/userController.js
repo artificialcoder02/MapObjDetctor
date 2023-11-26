@@ -30,14 +30,14 @@ const UserController = {
             const { name, email, phone, password } = req.body;
             // Basic validation (you may need more robust validation)
             if (!name || !email || !phone || !password) {
-                return res.status(400).json({ error: 'All fields are required' });
+                return res.status(400).json({ message: 'All fields are required' });
             }
 
             // Check if the email is already registered in the database
             const existingUser = await User.findOne({ email });
 
             if (existingUser) {
-                return res.status(400).json({ error: 'Email is already registered' });
+                return res.status(400).json({ message: 'Email is already registered' });
             }
 
             const user = new User({ name, email, password, phone });
@@ -46,13 +46,13 @@ const UserController = {
             user.verificationToken = verificationToken;
             await user.save();
 
-            const verificationLink = `${process.env.CLIENT_URL}/verify-user/${verificationToken}`;
+            const verificationLink = `${process.env.CLIENT_URL}/verify-user?verificationToken=${verificationToken}`;
             const subject = 'Account Verification';
             const htmlContent = `Click <a href="${verificationLink}">here</a> to verify your account.`;
 
             await sendEmail(email, subject, htmlContent);
 
-            res.status(201).send('User registered. Verification email sent.');
+            res.status(200).json({message: 'User registered. Verification email sent.'});
         } catch (error) {
             console.error(error);
             res.status(400).send(error.message);
@@ -62,14 +62,16 @@ const UserController = {
     login: async (req, res) => {
         try {
             const { email, password } = req.body;
-            const user = await User.findByCredentials(email, password);
+            //   const user = await User.findByCredentials(email, password);
+            const user = await User.findOne({ email });
+
 
             if (!user) {
-                return res.status(401).send('Invalid login credentials');
+                return res.status(401).json({ message: 'Invalid login credentials' });
             }
 
             if (!user.verified) {
-                return res.status(401).send('User is not verified. Please check your email for verification instructions.');
+                return res.status(401).json({ message: 'User is not verified. Please check your email for verification instructions.' });
             }
 
             const token = await user.generateAuthToken();
@@ -160,20 +162,20 @@ const UserController = {
             const user = await User.findOne({ _id: decodedToken._id });
 
             if (!user) {
-                return res.status(400).send('Invalid or expired verification token');
+                return res.status(400).json({message: 'Invalid or expired verification token'});
             }
 
             if (user.verified) {
-                return res.status(400).send('User is already verified');
+                return res.status(400).json({message: 'User is already verified'});
             }
 
             user.verified = true;
             await user.save();
 
-            res.send('User verification successful');
+            res.status(200).json({message: 'User verification successful'});
         } catch (error) {
             console.error(error);
-            res.status(500).send('Internal Server Error');
+            res.status(500).json({message:'Internal Server Error'});
         }
     },
 
