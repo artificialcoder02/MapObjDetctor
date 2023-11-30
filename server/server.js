@@ -22,7 +22,7 @@ app.use(cors({
 app.use('/api/v0.1/', userRouter);
 
 // Directory where image files are stored
-const imageFolder = '/Users/ashish/Desktop/MapObjDetctor/server/image';
+const imageFolder =  path.join(__dirname, 'image');
 
 // Get a list of image files in the folder
 const imageFiles = fs.readdirSync(imageFolder).filter(file => file.endsWith('.png'));
@@ -71,12 +71,14 @@ app.get("/pretrained", (req, res) => {
 
 app.post('/save-captured-image', (req, res) => {
     const { image, northWest, southEast } = req.body;
-    console.log(northWest, southEast);
+    // console.log(northWest, southEast);
     const fs = require('fs');
     const path = require('path'); // Import the path module
 
-    const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
+    // const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
+    const directoryPath = path.join(__dirname, 'geoj');
 
+    console.log(detectPathone);
     // Remove the data URL prefix (e.g., 'data:image/png;base64,')
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     // Create a unique filename or use a timestamp-based name
@@ -103,9 +105,9 @@ app.post('/save-captured-image', (req, res) => {
         const imagePer = path.join(__dirname, 'runs', 'detect', newExpFolder, fileName);
         // erform object detection using YOLOv5 on the saved PNG file
 
-        // const modelPath = path.join(__dirname, )
+        const modelPath = path.join(__dirname, 'best.pt');
         // !yolo detect predict model='/Users/tuhinrc/Desktop/best_models/dota_3epch/best.pt' source='/Users/tuhinrc/Desktop/yolov8_testing/Screenshot 2023-10-16 at 11.46.08 AM.png' 
-        exec(`yolo detect predict model='/Users/ashish/Desktop/MapObjDetctor/server/best.pt' source='${imagePath}'`, (error, stdout, stderr) => {
+        exec(`yolo detect predict model='${modelPath}' source='${imagePath}'`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing YOLOv5: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing object detection' });
@@ -139,8 +141,9 @@ app.post('/save-captured-image', (req, res) => {
         //     console.log(stdout);
         //     // Instead of reading the processed image from a file, you can directly convert it to base64
         // });
-
-        exec(`python /Users/ashish/Desktop/MapObjDetctor/scripts/tiffer.py --model /Users/ashish/Desktop/MapObjDetctor/server/best.pt --source ${geoTiffFilePath}`, (error, stdout, stderr) => {
+        const modelPathNew = path.join(__dirname, 'scripts', 'tiffer.py');
+        const modelDaynamic = path.join(__dirname, 'best.pt');
+        exec(`python ${modelPathNew} --model ${modelDaynamic} --source ${geoTiffFilePath}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing latlong conversion' }); ˀ
@@ -192,7 +195,8 @@ app.post('/save-captured-image', (req, res) => {
 
 // Function to read and parse the most recent GeoJSON file
 function getRecentGeoJSON() {
-    const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
+    const directoryPath = path.join(__dirname, 'geoj');
+    // const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
 
     // Read the directory
     const files = fs.readdirSync(directoryPath);
@@ -222,7 +226,8 @@ app.get('/get-recent-geojson', (req, res) => {
 
 app.post('/generate-shapefile', (req, res) => {
     // Execute your Python script here to generate the shapefile.
-    exec('python3 /Users/ashish/Desktop/MapObjDetctor/scripts/geotoshapconvertor.py', (error, stdout, stderr) => {
+    const modelPathNew = path.join(__dirname, 'scripts', 'geotoshapconvertor.py');
+    exec(`python3 ${modelPathNew}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing Python script: ${stderr}`);
             res.status(500).json({ error: 'Error generating shapefile' });
