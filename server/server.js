@@ -4,13 +4,22 @@ const fs = require('fs');
 const { exec } = require('child_process');
 const path = require('path');
 const cors = require("cors");
+const dotenv = require('dotenv').config();
 const sizeOf = require('image-size');
-app.use(cors({ origin: true, credentials: true }));
 const bodyParser = require('body-parser');
 app.use(bodyParser.json({ limit: '10000mb' }));
 const multer = require('multer');
+const connectMongo = require("./config/db/config.js");
+const userRouter = require('./router/userRoute.js')
 
 // app.use(express.json());
+connectMongo();
+app.use(cors({
+    origin: '*',
+    credentials: true
+}));
+
+app.use('/api/v0.1/', userRouter);
 
 // Directory where image files are stored
 const imageFolder = '/Users/ashish/Desktop/MapObjDetctor/server/image';
@@ -39,10 +48,15 @@ const dimensions = sizeOf(mostRecentImage);
 const imageWidth = dimensions.width;
 const imageHeight = dimensions.height;
 
+
 // Serve the HTML file for the root URL
 app.use(express.static("client"));
 app.get("/", (req, res) => {
     res.sendFile(path.resolve(__dirname, "client", "index.html"));
+});
+
+app.get("/verify-user", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "verification.html"));
 });
 
 app.use(express.static("client"));
@@ -342,8 +356,6 @@ app.get('/training-from-pretrained', (req, res) => {
         res.status(500).end(`data: Error performing training Model\n\n`);
     });
 });
-
-
 
 
 app.listen(3000, () => {
