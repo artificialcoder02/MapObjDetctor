@@ -52,7 +52,7 @@ const UserController = {
 
             await sendEmail(email, subject, htmlContent);
 
-            res.status(200).json({message: 'User registered. Verification email sent.'});
+            res.status(200).json({ message: 'User registered. Verification email sent.' });
         } catch (error) {
             console.error(error);
             res.status(400).send(error.message);
@@ -75,7 +75,12 @@ const UserController = {
             }
 
             const token = await user.generateAuthToken();
-            res.cookie('token', token, { maxAge: 12 * 60 * 60 * 1000, httpOnly: true });
+            res.cookie('token', token, {
+                maxAge: 12 * 60 * 60 * 1000,
+                secure: true, // Set to true in production over HTTPS
+                httpOnly: true,
+                sameSite: 'none',
+            });
 
             res.send({ user, token });
         } catch (error) {
@@ -162,20 +167,20 @@ const UserController = {
             const user = await User.findOne({ _id: decodedToken._id });
 
             if (!user) {
-                return res.status(400).json({message: 'Invalid or expired verification token'});
+                return res.status(400).json({ message: 'Invalid or expired verification token' });
             }
 
             if (user.verified) {
-                return res.status(400).json({message: 'User is already verified'});
+                return res.status(400).json({ message: 'User is already verified' });
             }
 
             user.verified = true;
             await user.save();
 
-            res.status(200).json({message: 'User verification successful'});
+            res.status(200).json({ message: 'User verification successful' });
         } catch (error) {
             console.error(error);
-            res.status(500).json({message:'Internal Server Error'});
+            res.status(500).json({ message: 'Internal Server Error' });
         }
     },
 

@@ -55,6 +55,14 @@ app.get("/", (req, res) => {
     res.sendFile(path.resolve(__dirname, "client", "index.html"));
 });
 
+app.get("/login", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "login.html"));
+});
+
+app.get("/signup", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "signup.html"));
+});
+
 app.get("/verify-user", (req, res) => {
     res.sendFile(path.resolve(__dirname, "client", "verification.html"));
 });
@@ -78,7 +86,7 @@ app.post('/save-captured-image', (req, res) => {
     // const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
     const directoryPath = path.join(__dirname, 'geoj');
 
-    console.log(detectPathone);
+    // console.log(detectPathone);
     // Remove the data URL prefix (e.g., 'data:image/png;base64,')
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     // Create a unique filename or use a timestamp-based name

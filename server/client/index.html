@@ -5,6 +5,8 @@
     <meta charset="utf-8">
     <title>Display a map with a custom style</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.20/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.css" />
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="../vendor/leaflet.editable.measure/leaflet_measure.css" />
@@ -44,112 +46,113 @@
 </head>
 
 <body>
-    <div id="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
-        <!-- <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
-            <a href="#" onclick="openNav('icon1')"><i class="hoverss"> <p> 10 </p></i></a>
-            <div class="label" id="label1"><p>name1</p></div>
-        </div>
-        <div class="icon" onmouseover="showLabel('label2')" onmouseout="hideLabel('label2')">
-            <a href="#" onclick="openNav('icon2')"><i class="fas fa-chart-bar hoverss"></i></a>
-            <div class="label" id="label2"><p>name2</p></div>
-        </div>
-        <div class="icon" onmouseover="showLabel('label3')" onmouseout="hideLabel('label3')">
-            <a href="#" onclick="openNav('icon3')"><i class="fas fa-chart-bar hoverss"></i></a>
-            <div class="label" id="label3"><p>name3</p></div>
-        </div>
-        <div class="icon" onmouseover="showLabel('label4')" onmouseout="hideLabel('label4')">
-            <a href="#" onclick="openNav('icon4')"><i class="fas fa-chart-bar hoverss"></i></a>
-            <div class="label" id="label4"><p>name4</p></div>
-        </div>
-        <div class="icon" onmouseover="showLabel('label5')" onmouseout="hideLabel('label5')">
-            <a href="#" onclick="openNav('icon5')"><i class="fas fa-chart-bar hoverss"></i></a>
-            <div class="label" id="label5"><p>name5</p></div>
-        </div>
-        <div class="icon" onmouseover="showLabel('label6')" onmouseout="hideLabel('label6')">
-            <a href="#" onclick="openNav('icon6')"><i class="fas fa-chart-bar hoverss"></i></a>
-            <div class="label" id="label6"><p>name6</p></div>
-        </div> -->
-    </div>
 
-    <div id="sidebar" class="sidebar">
-        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-        <!-- Sidebar content here -->
-    </div>
+    <div>
+        <div id="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
+            <!-- <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
+                <a href="#" onclick="openNav('icon1')"><i class="hoverss"> <p> 10 </p></i></a>
+                <div class="label" id="label1"><p>name1</p></div>
+            </div>
+             -->
+        </div>
 
-    <div class="upper_box">
-        <div id="titleBar">
-            <!-- Title and buttons go here -->
-            <h1>SatelliteObjectDetective: Leaflet & YOLOv8 Integration</h1>
-            <div class="heading">
-                <div style="width: 12%;">
+        <div id="sidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <!-- Sidebar content here -->
+        </div>
 
-                </div>
-                <div style="
-                width: 80%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            ">
-                    <!-- Add an HTML element for the loading spinner -->
-                    <div class="lds-ellipsis" id="loadingSpinner" style="display: none;">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
+        <div class="upper_box">
+            <div id="titleBar">
+                <!-- Title and buttons go here -->
+                <h1>SatelliteObjectDetective: Leaflet & YOLOv8 Integration</h1>
+                <div class="heading">
+                    <div style="width: 12%;">
+
+                    </div>
+                    <div style="
+                    width: 80%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                ">
+                        <!-- Add an HTML element for the loading spinner -->
+                        <div class="lds-ellipsis" id="loadingSpinner" style="display: none;">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
+
+
+                        <!-- Add an HTML element for the "Detect Objects" button -->
+                        <button id="exportBtn" onclick="downloadMap()" class="capture-button">Detect Objects</button>
+                        <button class="pop-button" id="userlogins" onclick="showPopup()">Add Annotations</button>
+                        <button class="shaper" id="userloginss" onclick="downloadShapefile()">Download
+                            Shapefile</button>
                     </div>
 
+                    <div class="userprofile" id="userlogin">
+                        <p id="userName"></p>
+                        <img id="userImage" alt="" />
 
-                    <!-- Add an HTML element for the "Detect Objects" button -->
-                    <button id="exportBtn" onclick="downloadMap()" class="capture-button">Detect Objects</button>
-                    <button class="pop-button" id="userlogin" onclick="showPopup()">Add Annotations</button>
-                    <button class="shaper" id="userlogin" onclick="downloadShapefile()">Download Shapefile</button>
+                        <!-- Dropdown container -->
+                        <div class="dropdown">
+                            <!-- Dropdown icon -->
+                            <i class="fas fa-cog" onclick="toggleDropdown()"></i>
+
+                            <!-- Dropdown content -->
+                            <div class="dropdown-content" id="dropdownMenu">
+                                <a href="#"><i class="fas fa-user"></i> Profile</a>
+                                <a href="#"><i class="fas fa-cogs"></i> Settings</a>
+                                <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="userprofiles" id="usernotlogin">
+                        <a href="/login" style="text-decoration: none; color: #ffff;">                        <p> <i class="fas fa-user-shield" style="margin-left: 3px;"></i> Login / Register</p>
+                        </a>
+                    </div>
                 </div>
-                <!-- 
-                <div class="userprofile" id="userlogin">
-                    <p>Ashish Kumar</p>
-                    <img src="https://cdn.dribbble.com/users/1104126/screenshots/6737246/team.gif" alt=""/>
-                </div> -->
+            </div>
+            <!-- <button class="capture-button">Capture and Save</button> -->
 
-                <div class="userprofile" id="usernotlogin">
-                    <p> <i class="fas fa-user-shield" style="margin-left: 3px;"></i> Login / Register</p>
+            <div id="map" class="map" style="z-index: 1;"></div>
+            <div id="image" class="maps" style="display: none;">
+            </div>
+
+
+        </div>
+        <!-- The Pop-up -->
+        <div id="popup">
+            <div class="popup">
+                <span class="close" onclick="closePopup()">&times;</span>
+                <h2>Upload an Image and Label</h2>
+                <div class="center_input">
+                    <div class="input-wrapper">
+                        <label for="imageUpload" id="imageLabel" class="file-label">Select an Image (PNG only):</label>
+                        <input type="file" id="imageUpload" accept="image/png" onchange="updateImageLabel()" />
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="labelUpload" id="labelLabel" class="file-label">Select a Label (TXT only):</label>
+                        <input type="file" id="labelUpload" accept=".txt" onchange="updateLabelLabel()" />
+                    </div>
+                </div>
+                <div class="button_center">
+                    <button onclick="save()" class="save-button">Save Files</button>
+                </div>
+
+                <div class="traing_btn">
+                    <a href="/training" style="text-decoration: none;"> <button id="training_btn"
+                            class="save-button">Training from Scratch</button> </a>
+                    <a href="/pretrained" style="text-decoration: none;"> <button id="training_btns" class="save-button"
+                            style="margin-left: 20px;">Training from Pretrained</button> </a>
                 </div>
             </div>
         </div>
-        <!-- <button class="capture-button">Capture and Save</button> -->
-
-        <div id="map" class="map" style="z-index: 1;"></div>
-        <div id="image" class="maps" style="display: none;">
-        </div>
-
-
     </div>
-    <!-- The Pop-up -->
-    <div id="popup">
-        <div class="popup">
-            <span class="close" onclick="closePopup()">&times;</span>
-            <h2>Upload an Image and Label</h2>
-            <div class="center_input">
-                <div class="input-wrapper">
-                    <label for="imageUpload" id="imageLabel" class="file-label">Select an Image (PNG only):</label>
-                    <input type="file" id="imageUpload" accept="image/png" onchange="updateImageLabel()" />
-                </div>
-                <div class="input-wrapper">
-                    <label for="labelUpload" id="labelLabel" class="file-label">Select a Label (TXT only):</label>
-                    <input type="file" id="labelUpload" accept=".txt" onchange="updateLabelLabel()" />
-                </div>
-            </div>
-            <div class="button_center">
-                <button onclick="save()" class="save-button">Save Files</button>
-            </div>
-
-            <div class="traing_btn">
-                <a href="/training" style="text-decoration: none;"> <button id="training_btn"
-                        class="save-button">Training from Scratch</button> </a>
-                <a href="/pretrained" style="text-decoration: none;"> <button id="training_btns" class="save-button"
-                        style="margin-left: 20px;">Training from Pretrained</button> </a>
-            </div>
-        </div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.20/dist/sweetalert2.all.min.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
 
     <script src="./script.js"></script>
 

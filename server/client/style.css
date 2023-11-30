@@ -46,6 +46,7 @@ body {
   border-radius: 5px;
   /* Round corners */
   transition: background-color 0.3s ease-in-out;
+  z-index: 2;
 }
 
 #titleBar button:hover {
@@ -56,6 +57,43 @@ body {
   background-color: #1abc9c;
 }
 
+
+/* Style for the dropdown */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* Style for the dropdown content */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  right: 0px;
+  top: 38px;
+  border-radius: 5px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+}
+
+/* Style for dropdown items */
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+/* Change color on hover */
+.dropdown-content a:hover {
+  background-color: #f9f9f9;
+}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+  display: block;
+}
 
 .upper_box {
   display: flex;
@@ -314,7 +352,7 @@ body {
 }
 
 
-.icon-bar::-webkit-scrollbar{
+.icon-bar::-webkit-scrollbar {
   display: none !important;
 }
 
@@ -351,20 +389,20 @@ body {
   font-size: 20px;
   height: 25px;
   width: 25px;
-  border:  2px seashell solid;
+  border: 2px seashell solid;
   background: #000;
   margin: 5px;
   text-decoration: none;
 }
 
-.hoverss{
+.hoverss {
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
 }
 
-.hoverss p{
+.hoverss p {
   padding: 0;
   margin: 0;
   font-size: 20px;
@@ -398,19 +436,21 @@ body {
   content: "";
   position: absolute;
   top: 50%;
-  right: 100%; /* Places the triangle on the left */
-  margin-top: -5px; /* Half the height of the triangle */
+  right: 100%;
+  /* Places the triangle on the left */
+  margin-top: -5px;
+  /* Half the height of the triangle */
   border-width: 5px;
   border-style: solid;
   border-color: transparent #3498db transparent transparent;
 }
 
-.icon-bar .icon a:hover + .label {
+.icon-bar .icon a:hover+.label {
   display: block;
   opacity: 1;
 }
 
-.userprofile{
+.userprofile {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -419,7 +459,7 @@ body {
 
 }
 
-.userprofiles{
+.userprofiles {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -428,12 +468,18 @@ body {
   cursor: pointer;
 }
 
-.userprofile img{
+.userprofile {
+  display: none;
+}
+
+
+.userprofile img {
   height: 50px;
   width: 50px;
   border-radius: 50px;
   cursor: pointer;
 }
+
 /* Sidebar styling */
 .sidebar {
   height: 100%;

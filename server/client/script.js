@@ -3,7 +3,11 @@ var map;
 let isLodind = false;
 
 document.getElementById('popup').style.display = 'none';
+const userLoginDivBtn = document.getElementById('userlogins');
+const userLoginDivBtntwo = document.getElementById('userloginss');
 
+userLoginDivBtntwo.style.display = 'none';
+userLoginDivBtn.style.display = 'none';
 
 document.getElementById('training_btn').style.display = 'none';
 document.getElementById('training_btns').style.display = 'none';
@@ -12,6 +16,107 @@ var loadingSpinner = document.getElementById("loadingSpinner");
 var detectButton = document.getElementById("exportBtn");
 
 
+function showSuccess(message) {
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: message,
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '/';
+        } else {
+            window.location.href = '/';
+        }
+    });
+}
+
+// Function to check user login status
+const checkLoginStatus = async () => {
+    try {
+        const token = sessionStorage.getItem('token');
+
+        if (!token) {
+            return { isLoggedIn: false };
+        }
+
+        // Fetch user information from the server using the token
+        const response = await fetch('/api/v0.1/check-login-status', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+                // Add any additional headers if needed
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error();
+        }
+
+        const user = await response.json();
+
+        return { isLoggedIn: true, user };
+    } catch (error) {
+        localStorage.removeItem('user');
+        return { isLoggedIn: false };
+    }
+};
+
+// Function to check login status and update local storage every 3 seconds
+const checkAndUpdateLoginStatus = async () => {
+    const loginStatus = await checkLoginStatus();
+
+    // Check if the user is logged in
+    if (loginStatus.isLoggedIn) {
+        // Get references to the userName and userImage elements
+        const userNameElement = document.getElementById('userName');
+        const userImageElement = document.getElementById('userImage');
+        const usenot = document.getElementById('usernotlogin');
+        const userLoginDiv = document.getElementById('userlogin');
+        userLoginDivBtntwo.style.display = 'block';
+        userLoginDivBtn.style.display = 'block';
+
+        // Set the text content of the userName element to the user's name
+        userNameElement.textContent = loginStatus.user.user.name;
+
+        // Set the src attribute of the userImage element to the user's profile image
+        userImageElement.src = loginStatus.user.user.profileimage;
+
+        // Show the userlogin div
+        userLoginDiv.style.display = 'flex';
+        usenot.style.display = 'none';
+
+        // Update user details in local storage
+        localStorage.setItem('user', JSON.stringify(loginStatus.user));
+    } else {
+        // Hide the userlogin div
+        userLoginDiv.style.display = 'none';
+        usenot.style.display = 'block';
+        // Clear user details from local storage if not logged in (optional)
+        localStorage.removeItem('user');
+    }
+};
+
+// Initial check when the page loads
+checkAndUpdateLoginStatus();
+
+// Periodically check and update every 3 seconds
+setInterval(checkAndUpdateLoginStatus, 3000);
+
+// Function to toggle dropdown visibility
+function toggleDropdown() {
+    var dropdownMenu = document.getElementById("dropdownMenu");
+    dropdownMenu.style.display = (dropdownMenu.style.display === "block") ? "none" : "block";
+}
+
+// Function to handle logout
+function logout() {
+    sessionStorage.removeItem('token');
+    setTimeout(() => {
+        showSuccess('Logout successfully');
+        checkAndUpdateLoginStatus();
+    }, 1000);
+}
 
 var centerPoint = [22.589659435441984, 88.41788365584796]; // Indian coordinates
 
@@ -44,6 +149,7 @@ const tileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}
 
 L.control.scale().addTo(map);
 
+
 // Create custom measure tools instances.
 var measure = L.measureBase(map, {});
 
@@ -52,7 +158,34 @@ var mimeArray = [];
 for (var type in mimeTypes) {
     mimeArray.push(mimeTypes[type]);
 }
+// Define a custom icon
+var customIcon = L.icon({
+    iconUrl: 'https://res.cloudinary.com/diyncva2v/image/upload/v1693944002/location-pin_hcqk7n.png',  // Replace with the URL to your custom icon
+    iconSize: [50, 50],  // Adjust the size of the icon as needed
+    iconAnchor: [19, 38],
+    popupAnchor: [0, -38]
+});
 
+// Variable to store the marker
+var marker;
+
+// Add the geocoding control
+var geocoder = L.Control.geocoder({
+    defaultMarkGeocode: false
+}).on('markgeocode', function (e) {
+    var latlng = e.geocode.center;
+    
+    // Remove the previous marker if it exists
+    if (marker) {
+        map.removeLayer(marker);
+    }
+
+    // Move the map to the searched location
+    map.setView(latlng, map.getZoom());
+
+    // Add a marker at the searched location with the custom icon
+    marker = L.marker(latlng, { icon: customIcon }).addTo(map);
+}).addTo(map);
 function downloadMap(caption) {
     loadingSpinner.style.display = 'block';
     detectButton.style.display = 'none';
@@ -144,24 +277,6 @@ function downloadMap(caption) {
     });
 }
 
-
-//   async function updateIconContent() {
-//     try {
-//         const response = await fetch('/get-recent-geojson');
-
-//         if (!response.ok) {
-//             throw new Error(`HTTP error! Status: ${response.status}`);
-//         }
-
-//         const data =  await response.json();
-//         const detectedClasses = extractDetectedClasses(data.features); // Use data.features
-
-//         // Update the content of the icons based on the detected classes
-//         updateIconContentOnPage(detectedClasses);
-//     } catch (error) {
-//         console.error('Error fetching detected classes:', error);
-//     }
-// }
 
 function extractDetectedClasses(features) {
     if (!features || !Array.isArray(features)) {
