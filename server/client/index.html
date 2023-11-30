@@ -44,7 +44,7 @@
 </head>
 
 <body>
-    <div id ="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
+    <div id="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
         <!-- <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
             <a href="#" onclick="openNav('icon1')"><i class="hoverss"> <p> 10 </p></i></a>
             <div class="label" id="label1"><p>name1</p></div>
@@ -69,8 +69,8 @@
             <a href="#" onclick="openNav('icon6')"><i class="fas fa-chart-bar hoverss"></i></a>
             <div class="label" id="label6"><p>name6</p></div>
         </div> -->
-    </div>    
-    
+    </div>
+
     <div id="sidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
         <!-- Sidebar content here -->
@@ -84,22 +84,27 @@
                 <div style="width: 12%;">
 
                 </div>
-                <div>
+                <div style="
+                width: 80%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            ">
                     <!-- Add an HTML element for the loading spinner -->
-                <div class="lds-ellipsis" id="loadingSpinner" style="display: none;">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                </div>
+                    <div class="lds-ellipsis" id="loadingSpinner" style="display: none;">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </div>
 
-                
-                <!-- Add an HTML element for the "Detect Objects" button -->
-                <button id="exportBtn" onclick="downloadMap()" class="capture-button">Detect Objects</button>
-                <button class="pop-button" id="userlogin" onclick="showPopup()">Add Annotations</button>
-                <button class="shaper" id="userlogin" onclick="downloadShapefile()">Download Shapefile</button>
+
+                    <!-- Add an HTML element for the "Detect Objects" button -->
+                    <button id="exportBtn" onclick="downloadMap()" class="capture-button">Detect Objects</button>
+                    <button class="pop-button" id="userlogin" onclick="showPopup()">Add Annotations</button>
+                    <button class="shaper" id="userlogin" onclick="downloadShapefile()">Download Shapefile</button>
                 </div>
-<!-- 
+                <!-- 
                 <div class="userprofile" id="userlogin">
                     <p>Ashish Kumar</p>
                     <img src="https://cdn.dribbble.com/users/1104126/screenshots/6737246/team.gif" alt=""/>
