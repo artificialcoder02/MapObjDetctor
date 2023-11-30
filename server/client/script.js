@@ -4,14 +4,20 @@ let isLodind = false;
 
 document.getElementById('popup').style.display = 'none';
 
+
 document.getElementById('training_btn').style.display = 'none';
 document.getElementById('training_btns').style.display = 'none';
+
+var loadingSpinner = document.getElementById("loadingSpinner");
+var detectButton = document.getElementById("exportBtn");
+
 
 
 var centerPoint = [22.589659435441984, 88.41788365584796]; // Indian coordinates
 
 // Global variable to store GeoJSON layers
 const geoJsonLayers = {};
+var geoJsonLayersAll = false;
 
 // Create leaflet map.
 var baseExportOptions = {
@@ -48,7 +54,8 @@ for (var type in mimeTypes) {
 }
 
 function downloadMap(caption) {
-
+    loadingSpinner.style.display = 'block';
+    detectButton.style.display = 'none';
     var downloadOptions = {
         container: map._container,
         caption: {
@@ -65,6 +72,7 @@ function downloadMap(caption) {
     };
     var promise = map.downloadExport(downloadOptions);
     var data = promise.then(function (result) {
+
         var bounds = map.getBounds();
         var northWest = bounds.getNorthWest();
         var southEast = bounds.getSouthEast();
@@ -95,166 +103,293 @@ function downloadMap(caption) {
             })
             .then((data) => {
                 // Handle the received data
-                console.log(data.geoJSON);
+                console.log(data.geojson);
                 var myLayer = L.geoJSON(data.geojson, {
                     style: function (feature) {
                         return {
-                            color: feature.properties.color || '#000000',  // Default to black if color is not specified
+                            color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
                             weight: 2,
                             opacity: 1
                         };
                     }
                 }).addTo(map);
+
+                var myLayer = L.geoJSON(data.geojson, {
+                    style: function (feature) {
+                        return {
+                            color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
+                            weight: 2,
+                            opacity: 1
+                        };
+                    }
+                }).addTo(map);
+
+                const classes = extractDetectedClasses(data.geojson.features); // Use data.features
+                const color = extractDetectedColor(data.geojson.features); // Use data.features
+                const objectsPerClass = calculateObjectsPerClass(data.geojson.features);
+                const totalClasses = data.geojson.features.length;
+
+                // Update the content of the icons based on the detected classes
+                updateIconContentOnPage(classes, color, objectsPerClass, totalClasses);
+                loadingSpinner.style.display = 'none';
+                detectButton.style.display = 'block';
             })
             .catch((error) => {
                 // Handle any errors that occur during the fetch request or JSON parsing
                 console.error('Error:', error);
+                loadingSpinner.style.display = 'none';
+                detectButton.style.display = 'block';
             });
         return result;
     });
 }
 
-/* Function to open the sidebar */
-function openNav(icon) {
-    let sidebar = document.getElementById("sidebar");
-    let sidebarContent = sidebar.querySelector('p');
-    if (sidebarContent) {
-      sidebarContent.innerText = `Content for ${icon}`;
-    } else {
-      sidebar.innerHTML = `<a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a><p>Content for ${icon}</p>`;
-    }
-    sidebar.style.width = "250px";
-  }
-  /* Function to close the sidebar */
-  function closeNav() {
-    document.getElementById("sidebar").style.width = "0";
-  }
 
-  async function updateIconContent() {
-    try {
-        const response = await fetch('/get-recent-geojson');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+//   async function updateIconContent() {
+//     try {
+//         const response = await fetch('/get-recent-geojson');
 
-        const data = await response.json();
-        const detectedClasses = extractDetectedClasses(data.features); // Use data.features
+//         if (!response.ok) {
+//             throw new Error(`HTTP error! Status: ${response.status}`);
+//         }
 
-        // Update the content of the icons based on the detected classes
-        updateIconContentOnPage(detectedClasses);
-    } catch (error) {
-        console.error('Error fetching detected classes:', error);
-    }
-}
+//         const data =  await response.json();
+//         const detectedClasses = extractDetectedClasses(data.features); // Use data.features
+
+//         // Update the content of the icons based on the detected classes
+//         updateIconContentOnPage(detectedClasses);
+//     } catch (error) {
+//         console.error('Error fetching detected classes:', error);
+//     }
+// }
 
 function extractDetectedClasses(features) {
     if (!features || !Array.isArray(features)) {
         console.error('Invalid GeoJSON structure:', features);
         return [];
     }
-
     const classes = features.map(feature => feature.properties.name);
     return [...new Set(classes)];
+}
+
+
+function extractDetectedColor(features) {
+    if (!features || !Array.isArray(features)) {
+        console.error('Invalid GeoJSON structure:', features);
+        return [];
+    }
     const color = features.map(feature => feature.properties.color);
     return [...new Set(color)];
 }
 
-// Function to toggle the visibility of a GeoJSON layer
-function toggleLayerVisibility(className) {
-    const layer = geoJsonLayers[className];
-    if (layer) {
-        if (map.hasLayer(layer)) {
-            map.removeLayer(layer);
-        } else {
-            map.addLayer(layer);
+function calculateObjectsPerClass(features) {
+    if (!features || !Array.isArray(features)) {
+        console.error('Invalid GeoJSON structure:', features);
+        return [];
+    }
+
+    const classCounts = {};
+
+    features.forEach(feature => {
+        const className = feature.properties.name;
+
+        if (className) {
+            if (classCounts[className]) {
+                classCounts[className]++;
+            } else {
+                classCounts[className] = 1;
+            }
         }
+    });
+
+    return Object.values(classCounts);
+}
+
+
+// Function to toggle the visibility of a GeoJSON layer
+async function toggleLayerVisibilityAll() {
+
+    if (geoJsonLayersAll === true) {
+        // Clear existing layers
+        map.eachLayer(l => {
+            if (l instanceof L.GeoJSON) {
+                map.removeLayer(l);
+            }
+        });
+
+        // Empty geoJsonLayers object
+        geoJsonLayersAll = false;
     } else {
         // If the layer doesn't exist, fetch and add it
-        updateGeoJSONLayer(className);
+        await fetchRecentGeoJSONAll();
     }
+}
+
+// Function to toggle the visibility of a GeoJSON layer
+async function toggleLayerVisibility(className) {
+    const layer = geoJsonLayers[className];
+
+    console.log(layer);
+    if (layer) {
+        await fetchRecentGeoJSON();
+    } else {
+        // If the layer doesn't exist, fetch and add it
+        await updateGeoJSONLayer(className);
+    }
+}
+
+// Function to fetch recent GeoJSON data and add it to the map
+async function fetchRecentGeoJSON() {
+    await fetch('/get-recent-geojson')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // // Ensure the GeoJSON structure is properly handled
+            if (data) {
+                // Clear existing layers
+                map.eachLayer(l => {
+                    if (l instanceof L.GeoJSON) {
+                        map.removeLayer(l);
+                    }
+                });
+
+                // Add new data to the map
+                const newLayer = L.geoJSON(data, {
+                    style: function (feature) {
+                        return {
+                            color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
+                            weight: 2,
+                            opacity: 1
+                        };
+                    }
+                }).addTo(map);
+
+                // Empty geoJsonLayers object
+                Object.keys(geoJsonLayers).forEach(key => delete geoJsonLayers[key]);
+            } else {
+                console.error('Invalid GeoJSON structure:', data.geojson);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching recent GeoJSON:', error);
+        });
+}
+
+async function fetchRecentGeoJSONAll() {
+    await fetch('/get-recent-geojson')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // // Ensure the GeoJSON structure is properly handled
+            if (data) {
+                // Clear existing layers
+                map.eachLayer(l => {
+                    if (l instanceof L.GeoJSON) {
+                        map.removeLayer(l);
+                    }
+                });
+
+                // Add new data to the map
+                const newLayer = L.geoJSON(data, {
+                    style: function (feature) {
+                        return {
+                            color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
+                            weight: 2,
+                            opacity: 1
+                        };
+                    }
+                }).addTo(map);
+
+                if (newLayer) {
+                    geoJsonLayersAll = true;
+                }
+
+
+            } else {
+                console.error('Invalid GeoJSON structure:', data.geojson);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching recent GeoJSON:', error);
+        });
 }
 
 // Function to update GeoJSON layer for a specific class
 async function updateGeoJSONLayer(className) {
-    try {
-        const response = await fetch(`/get-geojson-by-class?classNames=${encodeURIComponent(className)}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+    await fetch(`/get-geojson-by-class?classNames=${encodeURIComponent(className)}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Ensure the GeoJSON structure is properly handled
+            if (data.geojson && data.geojson.features && Array.isArray(data.geojson.features)) {
+                // Clear existing layers
+                map.eachLayer(l => {
+                    if (l instanceof L.GeoJSON) {
+                        map.removeLayer(l);
+                    }
+                });
 
-        const data = await response.json();
-        const layer = geoJsonLayers[className];
-
-        // Ensure the GeoJSON structure is properly handled
-        if (data.geojson && data.geojson.features && Array.isArray(data.geojson.features)) {
-            // Add new data
-            layer.clearLayers();
-            layer.addData(data.geojson);
-
-            // Clear existing layers
-            map.eachLayer((l) => {
-                if (l instanceof L.GeoJSON && l !== layer) {
-                    map.removeLayer(l);
-                }
-            });
-        } else {
-            console.error('Invalid GeoJSON structure:', data.geojson);
-        }
-    } catch (error) {
-        console.error('Error updating GeoJSON layer:', error);
-    }
+                // Add new data
+                const newLayer = L.geoJSON(data.geojson, {
+                    style: function (feature) {
+                        return {
+                            color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
+                            weight: 2,
+                            opacity: 1
+                        };
+                    }
+                }).addTo(map);
+                geoJsonLayers[className] = newLayer;
+            } else {
+                console.error('Invalid GeoJSON structure:', data.geojson);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching GeoJSON:', error);
+        });
 }
 
 
-function updateIconContentOnPage(detectedClasses, geojsonData) {
+function updateIconContentOnPage(detectedClasses, detectedColor, number, totalClass) {
     const iconBar = document.getElementById('iconBar');
-    
+
     // Log the detected classes to the console
-    console.log('Detected Classes (updateIconContentOnPage):', detectedClasses);
+    // console.log('Detected Classes (updateIconContentOnPage):', detectedClasses);
 
     // Remove existing icons
     iconBar.innerHTML = '';
 
-    // Create new icons based on detected classes
-    for (let i = 1; i <= detectedClasses.length; i++) {
-        const icon = document.createElement('div');
-        icon.className = 'icon';
-        icon.onmouseover = () => showLabel(`label${i}`);
-        icon.onmouseout = () => hideLabel(`label${i}`);
-        
-        const anchor = document.createElement('a');
-        anchor.href = '#';
-        anchor.onclick = () => openNav(`icon${i}`);
-        
-        const iconElement = document.createElement('i');
-        iconElement.className = 'fas fa-chart-bar hoverss';
+    for (let i = 0; i < detectedClasses.length; i++) {
 
-        // Assuming color information is available in detectedClasses
-        const iconColor = detectedClasses[i - 1].color || '#000000'; // Default to black if color is not specified
-        iconElement.style.color = iconColor;
+        // Assuming detectedClasses is an array of objects with 'name' and 'color' properties
+        const detectedClass = detectedClasses[i];
 
-        anchor.appendChild(iconElement);
+        // Use the provided HTML structure
+        const iconHTML = `
+              <div class="icon" onmouseover="showLabel('label${i}')" onmouseout="hideLabel('label${i}')">
+                  <a href="#${detectedClass}" onclick="toggleLayerVisibility('${detectedClass}')" style="background: ${detectedColor[i] || '#000000'};" ><i class="hoverss"> <p>${number[i]}</p></i></a>
+                  <div class="label" style="background: ${detectedColor[i] || '#000000'};   border-color: transparent ${detectedColor[i] || '#000000'} transparent transparent;
+                  " id="label${i}"><p>${detectedClass}</p></div>
+              </div>
+          `;
 
-        const label = document.createElement('div');
-        label.className = 'label';
-        label.id = `label${i}`;
-        
-        const paragraph = document.createElement('p');
-        paragraph.id = `content${i}`;
-        paragraph.textContent = detectedClasses[i - 1];
-        
-        label.appendChild(paragraph);
-        
-        icon.appendChild(anchor);
-        icon.appendChild(label);
-        
-        iconBar.appendChild(icon);
+        // Append the HTML to the icon bar
+        iconBar.innerHTML += iconHTML;
 
-        // Create GeoJSON layer for each class only if it doesn't exist
-        if (!geoJsonLayers[detectedClasses[i - 1]]) {
-            geoJsonLayers[detectedClasses[i - 1]] = L.geoJSON([], {
+        if (!geoJsonLayers[detectedClass.name]) {
+            geoJsonLayers[detectedClass.name] = L.geoJSON([], {
                 style: function (feature) {
                     return {
                         color: feature.properties.color || '#000000',
@@ -265,18 +400,25 @@ function updateIconContentOnPage(detectedClasses, geojsonData) {
             }).addTo(map);
         }
 
-        anchor.onclick = () => {
-            openNav(`icon${i}`);
-            toggleLayerVisibility(detectedClasses[i - 1]);
-            updateGeoJSONLayer(detectedClasses[i - 1]);
-        };
+        // Check if it's the last iteration
+        if (i === detectedClasses.length - 1) {
+            // Add the additional div for the last element
+            const lastIconHTML = `
+                <div class="icon" onmouseover="showLabel('label2')" onmouseout="hideLabel('label2')">
+                    <a href="#" onclick="toggleLayerVisibilityAll()"><i class="hoverss"> <p>${totalClass}</p></i></a>
+                    <div class="label" id="label${i}"><p>Toggle all</p></div>
+                </div>
+            `;
 
+            iconBar.innerHTML += lastIconHTML;
+        }
     }
 }
 
-document.getElementById('exportBtn').addEventListener('click', function () {
-    updateIconContent();
-});
+
+// document.getElementById('exportBtn').addEventListener('click', function () {
+//     updateIconContent();
+// });
 
 function showLabel(labelId) {
     const label = document.getElementById(labelId);
@@ -423,29 +565,29 @@ function downloadShapefile() {
     fetch('/generate-shapefile', {
         method: 'POST',
     })
-    .then(response => {
-        if (response.ok) {
-            // The server successfully generated the shapefile.
-            return response.blob(); // Convert response to a Blob
-        } else {
-            // Handle errors.
-            console.error('Failed to generate shapefile.');
-            throw new Error('Failed to generate shapefile.'); // Propagate the error
-        }
-    })
-    .then(blob => {
-        // Create a download link
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'shapefile.zip'; // Set the desired file name
-        document.body.appendChild(a); // Append the link to the document
-        a.click(); // Simulate a click on the link to trigger the download
-        document.body.removeChild(a); // Remove the link from the document
-        console.log('Download initiated successfully.');
-    })
-    .catch(error => {
-        // Handle network or other errors.
-        console.error('Request error:', error);
-    });
+        .then(response => {
+            if (response.ok) {
+                // The server successfully generated the shapefile.
+                return response.blob(); // Convert response to a Blob
+            } else {
+                // Handle errors.
+                console.error('Failed to generate shapefile.');
+                throw new Error('Failed to generate shapefile.'); // Propagate the error
+            }
+        })
+        .then(blob => {
+            // Create a download link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'shapefile.zip'; // Set the desired file name
+            document.body.appendChild(a); // Append the link to the document
+            a.click(); // Simulate a click on the link to trigger the download
+            document.body.removeChild(a); // Remove the link from the document
+            console.log('Download initiated successfully.');
+        })
+        .catch(error => {
+            // Handle network or other errors.
+            console.error('Request error:', error);
+        });
 }

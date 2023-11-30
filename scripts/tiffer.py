@@ -2,7 +2,7 @@ import argparse
 import json
 import geojson
 import os
-import rasterio
+#import rasterio
 from osgeo import gdal
 from osgeo import osr
 from ultralytics import YOLO
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("--source", required=True, help="Path to the source GeoTIFF image for inference")
     args = parser.parse_args()
 
-    output_folder = "/Users/tuhinrc/Desktop/newnew/MapObjDetctor/geoj"
+    output_folder = "/Users/ashish/Desktop/MapObjDetctor/server/geoj"
     detections = run_inference(args.model, args.source)
 
     detections_to_geojson(detections, output_folder)

@@ -7,8 +7,9 @@ body {
 
 .heading {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
+
 }
 
 .maps img {
@@ -333,7 +334,7 @@ body {
 .icon-bar .icon {
   display: flex;
   align-items: center;
-  width: 20vh;
+  width: 30vh;
 
 }
 
@@ -348,17 +349,37 @@ body {
   transition: all 0.3s;
   color: #ffffff;
   font-size: 20px;
-  background: #3498db;
+  height: 25px;
+  width: 25px;
+  border:  2px seashell solid;
+  background: #000;
   margin: 5px;
   text-decoration: none;
 }
+
+.hoverss{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.hoverss p{
+  padding: 0;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  font-style: normal;
+  text-align: center;
+}
+
 .icon-bar .icon .label {
   display: none;
   position: absolute;
-  margin-top: 21px;
-  left: 95px;
+  margin-top: 28px;
+  left: 110px;
   transform: translate(-50%, -50%);
-  background: #3498db;
+  background: #000;
   color: #fff;
   padding: 5px 10px;
   border-radius: 5px;
@@ -389,6 +410,30 @@ body {
   opacity: 1;
 }
 
+.userprofile{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  justify-content: space-evenly;
+
+}
+
+.userprofiles{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  justify-content: space-evenly;
+  cursor: pointer;
+}
+
+.userprofile img{
+  height: 50px;
+  width: 50px;
+  border-radius: 50px;
+  cursor: pointer;
+}
 /* Sidebar styling */
 .sidebar {
   height: 100%;

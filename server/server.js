@@ -13,7 +13,7 @@ const multer = require('multer');
 // app.use(express.json());
 
 // Directory where image files are stored
-const imageFolder = '/Users/tuhinrc/Desktop/newnew/MapObjDetctor/server/image';
+const imageFolder = '/Users/ashish/Desktop/MapObjDetctor/server/image';
 
 // Get a list of image files in the folder
 const imageFiles = fs.readdirSync(imageFolder).filter(file => file.endsWith('.png'));
@@ -61,7 +61,7 @@ app.post('/save-captured-image', (req, res) => {
     const fs = require('fs');
     const path = require('path'); // Import the path module
 
-    const directoryPath = '/Users/tuhinrc/Desktop/newnew/MapObjDetctor/geoj';
+    const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
 
     // Remove the data URL prefix (e.g., 'data:image/png;base64,')
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
@@ -89,8 +89,9 @@ app.post('/save-captured-image', (req, res) => {
         const imagePer = path.join(__dirname, 'runs', 'detect', newExpFolder, fileName);
         // erform object detection using YOLOv5 on the saved PNG file
 
+        // const modelPath = path.join(__dirname, )
         // !yolo detect predict model='/Users/tuhinrc/Desktop/best_models/dota_3epch/best.pt' source='/Users/tuhinrc/Desktop/yolov8_testing/Screenshot 2023-10-16 at 11.46.08 AM.png' 
-        exec(`yolo detect predict model='/Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt' source='${imagePath}'`, (error, stdout, stderr) => {
+        exec(`yolo detect predict model='/Users/ashish/Desktop/MapObjDetctor/server/best.pt' source='${imagePath}'`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing YOLOv5: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing object detection' });
@@ -113,7 +114,7 @@ app.post('/save-captured-image', (req, res) => {
             console.log(stdout);
             // Instead of reading the processed image from a file, you can directly convert it to base64
         });
-        
+
 
 
         // exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/scripting.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt --source ${imagePath} --nw_lat ${northWest.lat} --nw_lng ${northWest.lng} --se_lat ${southEast.lat} --se_lng ${southEast.lng} --image_width 1440 --image_height 687`, (error, stdout, stderr) => {
@@ -125,58 +126,59 @@ app.post('/save-captured-image', (req, res) => {
         //     // Instead of reading the processed image from a file, you can directly convert it to base64
         // });
 
-        exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/tiffer.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt --source ${geoTiffFilePath}`, (error, stdout, stderr) => {
+        exec(`python /Users/ashish/Desktop/MapObjDetctor/scripts/tiffer.py --model /Users/ashish/Desktop/MapObjDetctor/server/best.pt --source ${geoTiffFilePath}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing latlong conversion' }); ˀ
             }
             //console.log(geoTiffFilePath);
             console.log(stdout);
+            // Read the directory
+            fs.readdir(directoryPath, (err, files) => {
+                if (err) {
+                    console.error('Error reading directory:', err);
+                    return res.status(500).json({ error: 'Error reading directory' });
+                } else {
+                    // Filter the files with the pattern "output_<number>.geojson"
+                    const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
+
+                    // Sort the files by the creation time
+                    geojsonFiles.sort((fileA, fileB) => {
+                        return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
+                    });
+
+                    // Get the latest file
+                    const latestFile = geojsonFiles[0];
+
+                    // Read the file and load the data into a variable
+                    fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
+                        if (err) {
+                            console.error('Error reading file:', err);
+                            return res.status(500).json({ error: 'Error reading file' });
+                        } else {
+                            try {
+                                const jsonData = JSON.parse(data); // assuming the file contains JSON data
+                                // Use the jsonData variable as required
+                                console.log('Loaded data:', jsonData);
+                                return res.json({ geojson: jsonData });
+                            } catch (error) {
+                                console.error('Error parsing JSON data:', error);
+                                return res.status(500).json({ error: 'Error parsing JSON data' });
+                            }
+                        }
+                    });
+                }
+            });
             // Instead of reading the processed image from a file, you can directly convert it to base64
         });
 
-         // Read the directory
-         fs.readdir(directoryPath, (err, files) => {
-            if (err) {
-                console.error('Error reading directory:', err);
-                return res.status(500).json({ error: 'Error reading directory' });
-            } else {
-                // Filter the files with the pattern "output_<number>.geojson"
-                const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
 
-                // Sort the files by the creation time
-                geojsonFiles.sort((fileA, fileB) => {
-                    return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
-                });
-
-                // Get the latest file
-                const latestFile = geojsonFiles[0];
-
-                // Read the file and load the data into a variable
-                fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
-                    if (err) {
-                        console.error('Error reading file:', err);
-                        return res.status(500).json({ error: 'Error reading file' });
-                    } else {
-                        try {
-                            const jsonData = JSON.parse(data); // assuming the file contains JSON data
-                            // Use the jsonData variable as required
-                            console.log('Loaded data:', jsonData);
-                            return res.json({ geojson: jsonData });
-                        } catch (error) {
-                            console.error('Error parsing JSON data:', error);
-                            return res.status(500).json({ error: 'Error parsing JSON data' });
-                        }
-                    }
-                });
-            }
-        });
     });
 });
 
 // Function to read and parse the most recent GeoJSON file
 function getRecentGeoJSON() {
-    const directoryPath = '/Users/tuhinrc/Desktop/newnew/MapObjDetctor/geoj';
+    const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
 
     // Read the directory
     const files = fs.readdirSync(directoryPath);
@@ -206,7 +208,7 @@ app.get('/get-recent-geojson', (req, res) => {
 
 app.post('/generate-shapefile', (req, res) => {
     // Execute your Python script here to generate the shapefile.
-    exec('python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/geotoshapconvertor.py', (error, stdout, stderr) => {
+    exec('python3 /Users/ashish/Desktop/MapObjDetctor/scripts/geotoshapconvertor.py', (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing Python script: ${stderr}`);
             res.status(500).json({ error: 'Error generating shapefile' });
@@ -242,7 +244,7 @@ app.get('/get-geojson-by-class', (req, res) => {
     // Filter GeoJSON data by requested class names
     const filteredGeoJSON = filterGeoJSONByClass(recentGeoJSON, requestedClassNames);
 
-    res.json({ geojson: filteredGeoJSON });
+    res.status(200).json({ geojson: filteredGeoJSON });
 });
 
 // Function to filter GeoJSON data by class name

@@ -45,8 +45,8 @@
 
 <body>
     <div id ="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
-        <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
-            <a href="#" onclick="openNav('icon1')"><i class="fas fa-chart-bar hoverss"></i></a>
+        <!-- <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
+            <a href="#" onclick="openNav('icon1')"><i class="hoverss"> <p> 10 </p></i></a>
             <div class="label" id="label1"><p>name1</p></div>
         </div>
         <div class="icon" onmouseover="showLabel('label2')" onmouseout="hideLabel('label2')">
@@ -68,7 +68,7 @@
         <div class="icon" onmouseover="showLabel('label6')" onmouseout="hideLabel('label6')">
             <a href="#" onclick="openNav('icon6')"><i class="fas fa-chart-bar hoverss"></i></a>
             <div class="label" id="label6"><p>name6</p></div>
-        </div>
+        </div> -->
     </div>    
     
     <div id="sidebar" class="sidebar">
@@ -81,7 +81,11 @@
             <!-- Title and buttons go here -->
             <h1>SatelliteObjectDetective: Leaflet & YOLOv8 Integration</h1>
             <div class="heading">
-                <!-- Add an HTML element for the loading spinner -->
+                <div style="width: 12%;">
+
+                </div>
+                <div>
+                    <!-- Add an HTML element for the loading spinner -->
                 <div class="lds-ellipsis" id="loadingSpinner" style="display: none;">
                     <div></div>
                     <div></div>
@@ -89,10 +93,21 @@
                     <div></div>
                 </div>
 
+                
                 <!-- Add an HTML element for the "Detect Objects" button -->
                 <button id="exportBtn" onclick="downloadMap()" class="capture-button">Detect Objects</button>
-                <button class="pop-button" onclick="showPopup()">Add Annotations</button>
-                <button class="shaper" onclick="downloadShapefile()">Download Shapefile</button>
+                <button class="pop-button" id="userlogin" onclick="showPopup()">Add Annotations</button>
+                <button class="shaper" id="userlogin" onclick="downloadShapefile()">Download Shapefile</button>
+                </div>
+<!-- 
+                <div class="userprofile" id="userlogin">
+                    <p>Ashish Kumar</p>
+                    <img src="https://cdn.dribbble.com/users/1104126/screenshots/6737246/team.gif" alt=""/>
+                </div> -->
+
+                <div class="userprofile" id="usernotlogin">
+                    <p> <i class="fas fa-user-shield" style="margin-left: 3px;"></i> Login / Register</p>
+                </div>
             </div>
         </div>
         <!-- <button class="capture-button">Capture and Save</button> -->
