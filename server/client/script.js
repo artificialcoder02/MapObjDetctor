@@ -94,6 +94,8 @@ const checkAndUpdateLoginStatus = async () => {
         usenot.style.display = 'block';
         // Clear user details from local storage if not logged in (optional)
         localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        localStorage.removeItem('user');
     }
 };
 
@@ -112,6 +114,7 @@ function toggleDropdown() {
 // Function to handle logout
 function logout() {
     sessionStorage.removeItem('token');
+    localStorage.removeItem('user');
     setTimeout(() => {
         showSuccess('Logout successfully');
         checkAndUpdateLoginStatus();
@@ -174,7 +177,7 @@ var geocoder = L.Control.geocoder({
     defaultMarkGeocode: false
 }).on('markgeocode', function (e) {
     var latlng = e.geocode.center;
-    
+
     // Remove the previous marker if it exists
     if (marker) {
         map.removeLayer(marker);
@@ -186,7 +189,11 @@ var geocoder = L.Control.geocoder({
     // Add a marker at the searched location with the custom icon
     marker = L.marker(latlng, { icon: customIcon }).addTo(map);
 }).addTo(map);
+
+
 function downloadMap(caption) {
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
     loadingSpinner.style.display = 'block';
     detectButton.style.display = 'none';
     var downloadOptions = {
@@ -220,7 +227,7 @@ function downloadMap(caption) {
         // Send the base64Data to the server using an HTTP POST request
         fetch('/save-captured-image', {
             method: 'POST',
-            body: JSON.stringify({ image: result, northWest: northWest, southEast: southEast }),
+            body: JSON.stringify({ image: result, northWest: northWest, southEast: southEast, userId: jsonDataString ? jsonDataString.user._id : '' }),
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -355,7 +362,9 @@ async function toggleLayerVisibility(className) {
 
 // Function to fetch recent GeoJSON data and add it to the map
 async function fetchRecentGeoJSON() {
-    await fetch('/get-recent-geojson')
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
+    await fetch(`/get-recent-geojson?userId=${jsonDataString ? jsonDataString.user._id : ''}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -395,7 +404,9 @@ async function fetchRecentGeoJSON() {
 }
 
 async function fetchRecentGeoJSONAll() {
-    await fetch('/get-recent-geojson')
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
+    await fetch(`/get-recent-geojson?userId=${jsonDataString ? jsonDataString.user._id : ''}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
@@ -439,7 +450,9 @@ async function fetchRecentGeoJSONAll() {
 
 // Function to update GeoJSON layer for a specific class
 async function updateGeoJSONLayer(className) {
-    await fetch(`/get-geojson-by-class?classNames=${encodeURIComponent(className)}`)
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
+    await fetch(`/get-geojson-by-class?classNames=${encodeURIComponent(className)}&userId=${jsonDataString ? jsonDataString.user._id : ''}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);

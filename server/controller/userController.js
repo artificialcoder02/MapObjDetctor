@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../config/models/user');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
+const fs = require('fs').promises;
+const path = require('path');
 
 const sendEmail = async (to, subject, htmlContent) => {
     const transporter = nodemailer.createTransport({
@@ -175,8 +177,28 @@ const UserController = {
             }
 
             user.verified = true;
-            await user.save();
 
+            // Directory paths
+            const baseDir = path.join(__dirname, '..', 'userData', `${user._id}`);
+            const detectionDir = path.join(baseDir, 'detection');
+            const trainingDir = path.join(baseDir, 'training');
+            const detectionSubDirs = ['shaper', 'geot', 'geoj', 'image'];
+            const trainingSubDirs = ['annotations', 'images', 'labels', 'model', 'data'];
+
+            // Create directories and subdirectories
+            await fs.mkdir(baseDir, { recursive: true });
+            await fs.mkdir(detectionDir, { recursive: true });
+            await fs.mkdir(trainingDir, { recursive: true });
+
+            for (const subDir of detectionSubDirs) {
+                await fs.mkdir(path.join(detectionDir, subDir), { recursive: true });
+            }
+
+            for (const subDir of trainingSubDirs) {
+                await fs.mkdir(path.join(trainingDir, subDir), { recursive: true });
+            }
+
+            await user.save();
             res.status(200).json({ message: 'User verification successful' });
         } catch (error) {
             console.error(error);

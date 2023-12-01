@@ -96,6 +96,22 @@
                 },
             })
                 .then(response => {
+                    if (response.status === 200) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Verification Successful',
+                            text: 'Your email has been successfully verified!',
+                        }).then((result) => {
+                            // Check if the "OK" button is clicked
+                            if (result.isConfirmed) {
+                                // Redirect to the home page or any other desired page
+                                window.location.href = "/"; // Change the URL accordingly
+                            } else {
+                                window.location.href = "/"; // Change the URL accordingly
+                            }
+                        });
+                        return;
+                    }
                     return response.json();
                 })
                 .then(data => {
@@ -109,7 +125,7 @@
                             if (result.isConfirmed) {
                                 // Redirect to the home page or any other desired page
                                 window.location.href = "/"; // Change the URL accordingly
-                            }else{
+                            } else {
                                 window.location.href = "/"; // Change the URL accordingly
                             }
                         });
@@ -126,7 +142,7 @@
                             if (result.isConfirmed) {
                                 // Redirect to the home page or any other desired page
                                 window.location.href = "/"; // Change the URL accordingly
-                            }else{
+                            } else {
                                 window.location.href = "/"; // Change the URL accordingly
                             }
                         });

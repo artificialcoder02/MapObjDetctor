@@ -126,9 +126,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run YOLOv8 object detection on a source GeoTIFF image.")
     parser.add_argument("--model", required=True, help="Path to the YOLOv8 model checkpoint file")
     parser.add_argument("--source", required=True, help="Path to the source GeoTIFF image for inference")
+    parser.add_argument("--userId", required=False, help="Path to the chnage the output file")
+    import os
+    current_directory = os.getcwd()
+
     args = parser.parse_args()
 
-    output_folder = "/Users/ashish/Desktop/MapObjDetctor/server/geoj"
+    if args.userId:
+        output_folder = os.path.join(current_directory,  'detection', 'geoj')
+    else:
+        output_folder = os.path.join(current_directory, 'geoj')
+
     detections = run_inference(args.model, args.source)
 
     detections_to_geojson(detections, output_folder)

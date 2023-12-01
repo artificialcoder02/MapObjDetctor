@@ -22,7 +22,7 @@ app.use(cors({
 app.use('/api/v0.1/', userRouter);
 
 // Directory where image files are stored
-const imageFolder =  path.join(__dirname, 'image');
+const imageFolder = path.join(__dirname, 'image');
 
 // Get a list of image files in the folder
 const imageFiles = fs.readdirSync(imageFolder).filter(file => file.endsWith('.png'));
@@ -78,21 +78,21 @@ app.get("/pretrained", (req, res) => {
 });
 
 app.post('/save-captured-image', (req, res) => {
-    const { image, northWest, southEast } = req.body;
+    const { image, northWest, southEast, userId } = req.body;
     // console.log(northWest, southEast);
+    // console.log(userId);
     const fs = require('fs');
     const path = require('path'); // Import the path module
 
-    // const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
-    const directoryPath = path.join(__dirname, 'geoj');
+    const directoryPath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
 
-    // console.log(detectPathone);
     // Remove the data URL prefix (e.g., 'data:image/png;base64,')
     const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
     // Create a unique filename or use a timestamp-based name
     const fileName = `captured_${Date.now()}.png`;
     // Specify the path to the "image" folder
-    const imagePath = path.join(__dirname, 'image', fileName);
+    const imagePath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'image', fileName) : path.join(__dirname, 'image', fileName);
+
     // Write the base64 data to a PNG file
     fs.writeFile(imagePath, base64Data, 'base64', (err) => {
         if (err) {
@@ -101,34 +101,54 @@ app.post('/save-captured-image', (req, res) => {
         }
         console.log('Image saved successfully');
 
-        const detect = path.join(__dirname, 'yolov5', 'detect.py');
         // Find the highest existing experiment number in the "yolov5/runs/detect" directory
-        const detectDir = path.join(__dirname, 'runs', 'detect');
+        const detectDir = userId ? path.join(__dirname, 'userData', `${userId}`, 'runs', 'detect') : path.join(__dirname, 'runs', 'detect');
+
+
         const existingExpFolders = fs.readdirSync(detectDir).filter(folder => folder.startsWith('predict'));
         const highestExp = existingExpFolders.reduce((max, folder) => {
             const number = parseInt(folder.replace('predict', ''), 10);
             return number > max ? number : max;
         }, 0);
+
         const newExpFolder = `predict${highestExp + 1}`; // Increment the folder name
-        const imagePer = path.join(__dirname, 'runs', 'detect', newExpFolder, fileName);
+
+        const imagePer = userId ? path.join(__dirname, 'userData', `${userId}`, 'runs', 'detect', newExpFolder, fileName) : path.join(__dirname, 'runs', 'detect', newExpFolder, fileName);
         // erform object detection using YOLOv5 on the saved PNG file
 
         const modelPath = path.join(__dirname, 'best.pt');
-        // !yolo detect predict model='/Users/tuhinrc/Desktop/best_models/dota_3epch/best.pt' source='/Users/tuhinrc/Desktop/yolov8_testing/Screenshot 2023-10-16 at 11.46.08 AM.png' 
+        const userPath = path.join(__dirname, 'userData', `${userId}`);
+
+        if (userId) {
+            // Check if user directory exists
+            if (fs.existsSync(userPath)) {
+                process.chdir(userPath); // Change the current working directory to userPath
+                // console.log(`Changed working directory to: ${userPath}`);
+            }
+        }
+
         exec(`yolo detect predict model='${modelPath}' source='${imagePath}'`, (error, stdout, stderr) => {
             if (error) {
-                console.error(`Error executing YOLOv5: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing object detection' });
             }
             console.log(stderr);
-            // Instead of reading the processed image from a file, you can directly convert it to base64
+
             const processedImageData = fs.readFileSync(imagePer, 'base64');
             // Send the processed image as base64 in the response
-
             // return res.json({ processedImage: processedImageData });
+
+            // If you changed the directory, you might want to change it back to the original directory
+            if (fs.existsSync(userPath)) {
+                process.chdir(__dirname);
+                // console.log(`Changed working directory back to: ${__dirname}`);
+            }
         });
+
+
         const geoTiffFileName = `${path.basename(imagePath, path.extname(imagePath))}.tif`; // Construct the GeoTIFF file name
-        const geoTiffFilePath = path.join(__dirname, 'geot', geoTiffFileName); // Set the path for the GeoTIFF file
+
+        // console.log(geoTiffFileName);
+        const geoTiffFilePath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geot', geoTiffFileName) : path.join(__dirname, 'geot', geoTiffFileName); // Set the path for the GeoTIFF file
 
         exec(`gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${northWest.lng} ${northWest.lat} ${southEast.lng} ${southEast.lat} ${imagePath} ${geoTiffFilePath}`, (error, stdout, stderr) => {
             if (error) {
@@ -140,18 +160,11 @@ app.post('/save-captured-image', (req, res) => {
         });
 
 
-
-        // exec(`python3 /Users/tuhinrc/Desktop/newnew/MapObjDetctor/scripts/scripting.py --model /Users/tuhinrc/Desktop/newnew/MapObjDetctor/best.pt --source ${imagePath} --nw_lat ${northWest.lat} --nw_lng ${northWest.lng} --se_lat ${southEast.lat} --se_lng ${southEast.lng} --image_width 1440 --image_height 687`, (error, stdout, stderr) => {
-        //     if (error) {
-        //         console.error(`Error executing Script: ${stderr}`);
-        //         return res.status(500).json({ error: 'Error performing object detection' }); ˀ
-        //     }
-        //     console.log(stdout);
-        //     // Instead of reading the processed image from a file, you can directly convert it to base64
-        // });
         const modelPathNew = path.join(__dirname, 'scripts', 'tiffer.py');
         const modelDaynamic = path.join(__dirname, 'best.pt');
-        exec(`python ${modelPathNew} --model ${modelDaynamic} --source ${geoTiffFilePath}`, (error, stdout, stderr) => {
+
+
+        exec(`python ${modelPathNew} --model ${modelDaynamic} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}`: ''}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing latlong conversion' }); ˀ
@@ -202,8 +215,9 @@ app.post('/save-captured-image', (req, res) => {
 });
 
 // Function to read and parse the most recent GeoJSON file
-function getRecentGeoJSON() {
-    const directoryPath = path.join(__dirname, 'geoj');
+function getRecentGeoJSON(userId) {
+    
+    const directoryPath = userId? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
     // const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
 
     // Read the directory
@@ -226,8 +240,10 @@ function getRecentGeoJSON() {
 }
 
 app.get('/get-recent-geojson', (req, res) => {
+    let userId = req.query.userId;
+
     // Your logic to fetch the most recent GeoJSON data
-    const recentGeoJSON = getRecentGeoJSON();
+    const recentGeoJSON = getRecentGeoJSON(userId);
     res.json(recentGeoJSON);
 });
 
@@ -235,12 +251,14 @@ app.get('/get-recent-geojson', (req, res) => {
 app.post('/generate-shapefile', (req, res) => {
     // Execute your Python script here to generate the shapefile.
     const modelPathNew = path.join(__dirname, 'scripts', 'geotoshapconvertor.py');
-    exec(`python3 ${modelPathNew}`, (error, stdout, stderr) => {
+    
+    exec(`python ${modelPathNew}`, (error, stdout, stderr) => {
+        
         if (error) {
             console.error(`Error executing Python script: ${stderr}`);
             res.status(500).json({ error: 'Error generating shapefile' });
         } else {
-            console.log('Shapefile generated successfully.');
+            console.log(stdout);
             // Respond to the client indicating success.
             res.sendStatus(200);
         }
@@ -249,7 +267,9 @@ app.post('/generate-shapefile', (req, res) => {
 
 
 app.get('/get-geojson-by-class', (req, res) => {
-    const recentGeoJSON = getRecentGeoJSON();
+    let userId = req.query.userId;
+
+    const recentGeoJSON = getRecentGeoJSON(userId);
 
     if (!recentGeoJSON || !recentGeoJSON.features || recentGeoJSON.features.length === 0) {
         return res.status(500).json({ error: 'No GeoJSON data available.' });
@@ -286,6 +306,10 @@ function filterGeoJSONByClass(geoJSON, classNames) {
         features: filteredFeatures
     };
 }
+
+
+
+
 
 app.post('/upload', (req, res) => {
     const data = req.body; // Access JSON data from the request body
