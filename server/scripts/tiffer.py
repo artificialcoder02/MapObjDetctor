@@ -2,10 +2,11 @@ import argparse
 import json
 import geojson
 import os
-import rasterio
+#import rasterio
 from osgeo import gdal
 from osgeo import osr
 from ultralytics import YOLO
+import random 
 
 
 def pixel_to_latlng(pixel_x, pixel_y, dataset):
@@ -52,7 +53,8 @@ def run_inference(model_path, source_image):
 
     for result in results:
         pre = json.loads(result.tojson())
-        print(pre)
+
+        #print(pre)
         for item in pre:
             box = item.get("box")
             x1 = box.get("x1")
@@ -78,6 +80,9 @@ def detections_to_geojson(input_json, output_folder):
     output_filename = os.path.join(output_folder, f"output_{file_number}.geojson")
     features = []
 
+    # Use a dictionary to store dynamically assigned colors for each class
+    class_color_mapping = {}
+
     for item in input_json:
         lat1, lng1, lat2, lng2 = item['lat1'], item['lng1'], item['lat2'], item['lng2']
 
@@ -90,9 +95,24 @@ def detections_to_geojson(input_json, output_folder):
             (lng1, lat1)  # Close the polygon
         ]
 
+        # Get the color based on the class from the mapping dictionary
+        color = class_color_mapping.get(item["class"])
+
+        # If the class doesn't have a color, generate a random color
+        if color is None:
+            color = "#{:06x}".format(random.randint(0, 0xFFFFFF))  # Random hex color
+
+            # Store the color in the mapping dictionary for future use
+            class_color_mapping[item["class"]] = color
+
         feature = geojson.Feature(
             geometry=geojson.Polygon([coordinates]),
-            properties={"name": item["name"], "class": item["class"], "confidence": item["confidence"]}
+            properties={
+                "name": item["name"],
+                "class": item["class"],
+                "confidence": item["confidence"],
+                "color": color  # Include color information
+            }
         )
         features.append(feature)
 
@@ -106,9 +126,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run YOLOv8 object detection on a source GeoTIFF image.")
     parser.add_argument("--model", required=True, help="Path to the YOLOv8 model checkpoint file")
     parser.add_argument("--source", required=True, help="Path to the source GeoTIFF image for inference")
+    parser.add_argument("--userId", required=False, help="Path to the chnage the output file")
+    import os
+    current_directory = os.getcwd()
+
     args = parser.parse_args()
 
-    output_folder = "/Users/tuhinrc/Desktop/newnew/MapObjDetctor/geoj"
+    if args.userId:
+        output_folder = os.path.join(current_directory,  'detection', 'geoj')
+    else:
+        output_folder = os.path.join(current_directory, 'geoj')
+
     detections = run_inference(args.model, args.source)
 
     detections_to_geojson(detections, output_folder)

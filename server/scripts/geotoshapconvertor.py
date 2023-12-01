@@ -2,7 +2,10 @@ import os
 import geopandas as gpd
 
 # Directory where GeoJSON files are stored
-geojson_folder = "/Users/tuhinrc/Desktop/newnew/MapObjDetctor/geoj"
+current_directory = os.getcwd() 
+# print(current_directory + '/geoj');   
+
+geojson_folder = current_directory + '/geoj'
 
 # Get a list of GeoJSON files in the folder
 geojson_files = [f for f in os.listdir(geojson_folder) if f.endswith(".geojson")]
@@ -24,7 +27,7 @@ else:
     gdf = gpd.read_file(most_recent_geojson)
 
     # Set the output shapefile path and filename (in the "Shaper" folder)
-    shapefile_output = os.path.join("/Users/tuhinrc/Desktop/newnew/MapObjDetctor/server/shaper", base_name)
+    shapefile_output = os.path.join(current_directory + '/shaper', base_name)
 
     # Save the GeoDataFrame as a shapefile
     gdf.to_file(shapefile_output, driver="ESRI Shapefile")

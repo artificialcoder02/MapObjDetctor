@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.20/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <title>Signup Page</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .signup-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 400px;
+            max-width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .signup-container:hover {
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .signup-container h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        .signup-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .form-group:hover {
+            transform: scale(1.05);
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:hover,
+        .form-group input:focus {
+            border-color: #4caf50;
+        }
+
+        .form-group a {
+            background-color: #4caf50;
+            color: #fff;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .form-group a:hover {
+            background-color: #45a049;
+        }
+
+        .form-group p {
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .form-group a {
+            text-decoration: none !important;
+            color: #fefefe;
+            transition: color 0.3s ease;
+        }
+
+        .form-group a:hover {
+            color: #ffffff;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo-container img {
+            max-width: 100px;
+            height: auto;
+        }
+
+        .loader-container img {
+            height: 250px;
+            width: 250px;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            25% {
+                transform: scale(1.2);
+            }
+        }
+
+        .loader-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+            /* Animation properties for pulsing */
+        }
+
+        .loader-container.hidden {
+            display: none;
+        }
+
+        .loader-container.hidden {
+            display: none;
+        }
+
+        .from-container {
+            display: none;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body style="height: 100vh !important;">
+
+    <!-- Loader Container -->
+    <div class="loader-container">
+        <div class="loader">
+            <img src="https://res.cloudinary.com/diyncva2v/image/upload/v1701347778/h0olbhasxmy6uodnabvs.png"
+                alt="ISRO Logo">
+        </div>
+
+    </div>
+
+    <div class='from-container' id="signup-container">
+        <!-- Logo Container -->
+        <div class="logo-container">
+            <img src="https://res.cloudinary.com/diyncva2v/image/upload/v1701347778/h0olbhasxmy6uodnabvs.png"
+                alt="ISRO Logo">
+        </div>
+
+        <div class="signup-container">
+            <h2>Sign Up</h2>
+            <form class="signup-form">
+
+                <div class="form-group">
+                    <label for="FullName">Full Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="username" required>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="Phone">Phone Number</label>
+                    <input type="number" id="phone" name="phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="password" name="password" required>
+                        <!-- Show/hide password button using Font Awesome -->
+                        <i class="password-toggle far fa-eye-slash" onclick="togglePasswordVisibility('password')"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Re-Enter Password</label>
+                    <div style="position: relative;">
+                        <input type="password" id="reenterPassword" name="password" required>
+                        <!-- Show/hide password button using Font Awesome -->
+                        <i class="password-toggle far fa-eye-slash"
+                            onclick="togglePasswordVisibility('reenterPassword')"></i>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button id="signupButton" class="btn btn-primary" onclick="validateForm()" type="button">
+                        <span id="signupText">Sign Up</span>
+                        <div id="signupSpinner" class="spinner-border spinner-border-sm ml-2 d-none" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </button>
+                </div>
+
+                <p>Already have an account? <a href="/login">Log in</a></p>
+            </form>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.20/dist/sweetalert2.all.min.js"></script>
+    <script>
+        function hideLoader() {
+            document.querySelector('.loader-container').classList.add('hidden');
+            document.querySelector('.from-container').style.display = 'block';
+        }
+
+        setTimeout(() => {
+            hideLoader();
+        }, 2000);
+
+        function togglePasswordVisibility(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            const icon = document.querySelector(`.${fieldId}-toggle`);
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                passwordField.type = 'password';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        }
+
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailRegex.test(email)) {
+                showError('Invalid email address');
+                return false;
+            }
+
+            const reputedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'example.com'];
+
+            const domain = email.split('@')[1];
+            if (!reputedDomains.includes(domain)) {
+                showError('Invalid email domain');
+                return false;
+            }
+
+            return true;
+        }
+
+        function validatePhoneNumber(phone) {
+            const phoneRegex = /^\d{10}$/;
+            if (!phoneRegex.test(phone)) {
+                showError('Invalid phone number');
+                return false;
+            }
+            return true;
+        }
+
+        function showError(message) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Error',
+                text: message,
+            });
+        }
+
+        function showSuccess(message) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: message,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href= '/login';
+                }else{
+                    window.location.href= '/login';
+                }
+            });;
+        }
+
+        function validateForm() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const reenterPassword = document.getElementById('reenterPassword').value;
+            const signupButton = document.getElementById('signupButton');
+            const signupText = document.getElementById('signupText');
+            const signupSpinner = document.getElementById('signupSpinner');
+
+            // Disable the button and show the spinner
+            signupButton.classList.add('disabled');
+            signupText.style.display = 'none';
+            signupSpinner.classList.remove('d-none');
+
+            if (!name) {
+                showError("Please Enter Your Name")
+                return;
+            }
+
+            if (!phone) {
+                showError("Please Enter Your Phone Number")
+                return;
+            }
+
+            if (!validateEmail(email) || !validatePhoneNumber(phone)) {
+                return;
+            }
+            if (!password) {
+                showError("Please Enter your password")
+                return;
+            }
+
+
+            if (password !== reenterPassword) {
+                showError('Passwords do not match');
+                return;
+            }
+
+            const formData = {
+                name,
+                email,
+                phone,
+                password,
+            };
+
+            // Post form data to signup API endpoint
+            fetch('http://localhost:3000/api/v0.1/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+                .then(response => {
+                    if (response.status === 200) {
+                        showSuccess('User registered. Verification email sent.');
+                        // Finally, hide the spinner and enable the button
+                        signupButton.classList.remove('disabled');
+                        signupText.style.display = 'inline';
+                        signupSpinner.classList.add('d-none');
+                        document.querySelector('.signup-form').reset(); // Reset the form
+
+                        return;
+                    }
+                    return response.json();
+                    // Finally, hide the spinner and enable the button
+                    signupButton.classList.remove('disabled');
+                    signupText.style.display = 'inline';
+                    signupSpinner.classList.add('d-none');
+
+                })
+                .then(data => {
+                    if (data.message) {
+                        showError(data.message);
+                        // Finally, hide the spinner and enable the button
+                        signupButton.classList.remove('disabled');
+                        signupText.style.display = 'inline';
+                        signupSpinner.classList.add('d-none');
+
+                        return;
+                    } else {
+                        console.log(data);
+                        // Finally, hide the spinner and enable the button
+                        signupButton.classList.remove('disabled');
+                        signupText.style.display = 'inline';
+                        signupSpinner.classList.add('d-none');
+
+                        showSuccess('Sign successfully');
+                    }
+                })
+        }
+
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+</body>
+
+</html>
