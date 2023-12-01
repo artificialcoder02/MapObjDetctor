@@ -11,6 +11,8 @@ app.use(bodyParser.json({ limit: '10000mb' }));
 const multer = require('multer');
 const connectMongo = require("./config/db/config.js");
 const userRouter = require('./router/userRoute.js')
+const util = require('util');
+const readdirAsync = util.promisify(fs.readdir);
 
 // app.use(express.json());
 connectMongo();
@@ -77,10 +79,53 @@ app.get("/pretrained", (req, res) => {
     res.sendFile(path.resolve(__dirname, "client", "pretrained.html"));
 });
 
+
+app.get('/files', async (req, res) => {
+    try {
+        const baseFolderPath = path.join(__dirname, 'userData');
+        const defaultModelFolderPath = path.join(__dirname, 'model');
+        let userId = req.query.userId;
+
+        const defaultFiles = await readdirAsync(defaultModelFolderPath);
+
+        let userFiles = [];
+        let userFolderPath
+        if (userId) {
+            userFolderPath = path.join(baseFolderPath, `${userId}`, 'training', 'model');
+            // Read the files in the specified user folder
+
+            userFiles = await readdirAsync(userFolderPath);
+        }
+
+        const constructFileObject = (folderPath, file) => {
+            const filePath = path.join(folderPath, file);
+            const fileName = path.parse(file).name;
+
+            // Construct the file object
+            return {
+                filename: fileName,
+                path: filePath,
+            };
+        };
+
+        // Create an array to store the file objects
+        const defaultFileObjects = defaultFiles.map(file => constructFileObject(defaultModelFolderPath, file));
+
+        const userFileObjects = userFiles.map(file => constructFileObject(userFolderPath, file));
+
+       // Send the arrays of file objects as separate JSON properties
+       res.json({
+        defaultFiles: defaultFileObjects,
+        userFiles: userFileObjects,
+    });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 app.post('/save-captured-image', (req, res) => {
     const { image, northWest, southEast, userId } = req.body;
-    // console.log(northWest, southEast);
-    // console.log(userId);
     const fs = require('fs');
     const path = require('path'); // Import the path module
 
@@ -103,6 +148,8 @@ app.post('/save-captured-image', (req, res) => {
 
         // Find the highest existing experiment number in the "yolov5/runs/detect" directory
         const detectDir = userId ? path.join(__dirname, 'userData', `${userId}`, 'runs', 'detect') : path.join(__dirname, 'runs', 'detect');
+
+
 
 
         const existingExpFolders = fs.readdirSync(detectDir).filter(folder => folder.startsWith('predict'));
@@ -164,7 +211,7 @@ app.post('/save-captured-image', (req, res) => {
         const modelDaynamic = path.join(__dirname, 'best.pt');
 
 
-        exec(`python ${modelPathNew} --model ${modelDaynamic} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}`: ''}`, (error, stdout, stderr) => {
+        exec(`python ${modelPathNew} --model ${modelDaynamic} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing latlong conversion' }); ˀ
@@ -216,8 +263,8 @@ app.post('/save-captured-image', (req, res) => {
 
 // Function to read and parse the most recent GeoJSON file
 function getRecentGeoJSON(userId) {
-    
-    const directoryPath = userId? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
+
+    const directoryPath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
     // const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
 
     // Read the directory
@@ -251,9 +298,9 @@ app.get('/get-recent-geojson', (req, res) => {
 app.post('/generate-shapefile', (req, res) => {
     // Execute your Python script here to generate the shapefile.
     const modelPathNew = path.join(__dirname, 'scripts', 'geotoshapconvertor.py');
-    
+
     exec(`python ${modelPathNew}`, (error, stdout, stderr) => {
-        
+
         if (error) {
             console.error(`Error executing Python script: ${stderr}`);
             res.status(500).json({ error: 'Error generating shapefile' });
@@ -313,6 +360,7 @@ function filterGeoJSONByClass(geoJSON, classNames) {
 
 app.post('/upload', (req, res) => {
     const data = req.body; // Access JSON data from the request body
+    let userId = req.query.userId;
 
     // Process the data as needed
     const imageBase64 = data.imageBase64;
@@ -328,8 +376,8 @@ app.post('/upload', (req, res) => {
     }
 
     // Generate file paths
-    const imageFilePath = path.join(__dirname, 'annotations', 'images', imageFileName);
-    const labelFilePath = path.join(__dirname, 'annotations', 'labels', labelFileName);
+    const imageFilePath = userId ? path.join(__dirname, 'userData', `${userId}`, 'training', 'annotations', 'images', imageFileName) : path.join(__dirname, 'annotations', 'images', imageFileName);
+    const labelFilePath = userId ? path.join(__dirname, 'userData', `${userId}`, 'training', 'annotations', 'labels', labelFileName) : path.join(__dirname, 'annotations', 'labels', labelFileName);
 
     // Convert Base64 to files and save them
     base64ToFile(imageBase64, imageFilePath);
@@ -398,3 +446,7 @@ app.get('/training-from-pretrained', (req, res) => {
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
+
+
+
+

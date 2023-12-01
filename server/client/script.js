@@ -1,13 +1,15 @@
 var x = document.getElementById("demo");
 var map;
 let isLodind = false;
+const progressBar = document.getElementById('prbar');
+progressBar.style.display = 'none';
 
 document.getElementById('popup').style.display = 'none';
 const userLoginDivBtn = document.getElementById('userlogins');
 const userLoginDivBtntwo = document.getElementById('userloginss');
 
-userLoginDivBtntwo.style.display = 'none';
-userLoginDivBtn.style.display = 'none';
+// userLoginDivBtntwo.style.display = 'none';
+// userLoginDivBtn.style.display = 'none';
 
 document.getElementById('training_btn').style.display = 'none';
 document.getElementById('training_btns').style.display = 'none';
@@ -582,91 +584,91 @@ function afterExport(result) {
 }
 
 
-async function save() {
-    const imageFile = document.getElementById('imageUpload').files[0];
-    const labelFile = document.getElementById('labelUpload').files[0];
+// async function save() {
+//     const imageFile = document.getElementById('imageUpload').files[0];
+//     const labelFile = document.getElementById('labelUpload').files[0];
 
-    if (!imageFile || !labelFile) {
-        alert('Please select both an image and a label file.');
-        return;
-    }
+//     if (!imageFile || !labelFile) {
+//         alert('Please select both an image and a label file.');
+//         return;
+//     }
 
-    const imageNameWithoutExtension = imageFile.name.replace(/\.[^/.]+$/, '');
-    const labelNameWithoutExtension = labelFile.name.replace(/\.[^/.]+$/, '');
+//     const imageNameWithoutExtension = imageFile.name.replace(/\.[^/.]+$/, '');
+//     const labelNameWithoutExtension = labelFile.name.replace(/\.[^/.]+$/, '');
 
-    if (imageNameWithoutExtension !== labelNameWithoutExtension) {
-        alert('File names (excluding extensions) must match.');
-        return;
-    }
+//     if (imageNameWithoutExtension !== labelNameWithoutExtension) {
+//         alert('File names (excluding extensions) must match.');
+//         return;
+//     }
 
-    // Function to convert a file to Base64
-    function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]); // Extract base64 data
-            reader.onerror = (error) => reject(error);
-            reader.readAsDataURL(file);
-        });
-    }
+//     // Function to convert a file to Base64
+//     function fileToBase64(file) {
+//         return new Promise((resolve, reject) => {
+//             const reader = new FileReader();
+//             reader.onload = () => resolve(reader.result.split(',')[1]); // Extract base64 data
+//             reader.onerror = (error) => reject(error);
+//             reader.readAsDataURL(file);
+//         });
+//     }
 
-    // Convert image and label files to Base64
-    const imageBase64 = await fileToBase64(imageFile);
-    const labelBase64 = await fileToBase64(labelFile);
+//     // Convert image and label files to Base64
+//     const imageBase64 = await fileToBase64(imageFile);
+//     const labelBase64 = await fileToBase64(labelFile);
 
-    const data = {
-        imageFileName: imageNameWithoutExtension,
-        labelFileName: labelNameWithoutExtension,
-        imageBase64,
-        labelBase64,
-    };
+//     const data = {
+//         imageFileName: imageNameWithoutExtension,
+//         labelFileName: labelNameWithoutExtension,
+//         imageBase64,
+//         labelBase64,
+//     };
 
-    try {
-        const response = await fetch('/upload', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json', // Set the content type to JSON
-            },
-            body: JSON.stringify(data),
-        });
+//     try {
+//         const response = await fetch('/upload', {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json', // Set the content type to JSON
+//             },
+//             body: JSON.stringify(data),
+//         });
 
-        if (response.ok) {
-            alert('Files saved successfully on the server.');
-            document.getElementById('training_btn').style.display = 'block';
-            document.getElementById('training_btns').style.display = 'block';
+//         if (response.ok) {
+//             alert('Files saved successfully on the server.');
+//             document.getElementById('training_btn').style.display = 'block';
+//             document.getElementById('training_btns').style.display = 'block';
 
-        } else {
-            alert('Failed to save files on the server.');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('An error occurred while saving files on the server.');
-    }
-}
-function updateImageLabel() {
-    const input = document.getElementById('imageUpload');
-    const label = document.getElementById('imageLabel');
+//         } else {
+//             alert('Failed to save files on the server.');
+//         }
+//     } catch (error) {
+//         console.error('Error:', error);
+//         alert('An error occurred while saving files on the server.');
+//     }
+// }
+// function updateImageLabel() {
+//     const input = document.getElementById('imageUpload');
+//     const label = document.getElementById('imageLabel');
 
-    if (input && label) {
-        if (input.files.length > 0) {
-            label.textContent = `Selected file: ${input.files[0].name}`;
-        } else {
-            label.textContent = `Select an image file`;
-        }
-    }
-}
+//     if (input && label) {
+//         if (input.files.length > 0) {
+//             label.textContent = `Selected file: ${input.files[0].name}`;
+//         } else {
+//             label.textContent = `Select an image file`;
+//         }
+//     }
+// }
 
-function updateLabelLabel() {
-    const input = document.getElementById('labelUpload');
-    const label = document.getElementById('labelLabel');
+// function updateLabelLabel() {
+//     const input = document.getElementById('labelUpload');
+//     const label = document.getElementById('labelLabel');
 
-    if (input && label) {
-        if (input.files.length > 0) {
-            label.textContent = `Selected file: ${input.files[0].name}`;
-        } else {
-            label.textContent = `Select a label file`;
-        }
-    }
-}
+//     if (input && label) {
+//         if (input.files.length > 0) {
+//             label.textContent = `Selected file: ${input.files[0].name}`;
+//         } else {
+//             label.textContent = `Select a label file`;
+//         }
+//     }
+// }
 
 // function downloadShapefile() {
 //     // Send an HTTP request to the server to generate the shapefile.
@@ -687,6 +689,127 @@ function updateLabelLabel() {
 //         console.error('Request error:', error);
 //     });
 // }
+
+async function save() {
+    const imageFiles = Array.from(document.getElementById('imageUpload').files);
+    const labelFiles = Array.from(document.getElementById('labelUpload').files);
+    const progress = document.getElementById('prbar');
+    progress.style.display = 'block';
+
+    if (imageFiles.length !== labelFiles.length) {
+        alert('Please select the same number of image and label files.');
+        progress.style.display = 'none';
+        return;
+    }
+
+    const filePairs = imageFiles.map((imageFile, index) => ({
+        imageFile,
+        labelFile: labelFiles[index],
+    }));
+
+    const progressBar = document.getElementById('progressBar');
+    progressBar.style.width = '0%';
+
+    for (let i = 0; i < filePairs.length; i++) {
+        const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
+        const { imageFile, labelFile } = filePairs[i];
+
+        const imageNameWithoutExtension = imageFile.name.replace(/\.[^/.]+$/, '');
+        const labelNameWithoutExtension = labelFile.name.replace(/\.[^/.]+$/, '');
+
+        if (imageNameWithoutExtension !== labelNameWithoutExtension) {
+            alert('File names (excluding extensions) must match.');
+            progress.style.display = 'none';
+            return;
+        }
+
+        const imageBase64 = await fileToBase64(imageFile);
+        const labelBase64 = await fileToBase64(labelFile);
+
+        const data = {
+            imageFileName: imageNameWithoutExtension,
+            labelFileName: labelNameWithoutExtension,
+            imageBase64,
+            labelBase64,
+        };
+
+        try {
+            const xhr = new XMLHttpRequest();
+
+            // Track upload progress
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressText.innerText = percentComplete + '%';
+                }
+            });
+
+            // Handle successful upload
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    if (i === filePairs.length - 1) {
+                        // All files uploaded
+                        document.getElementById('training_btn').style.display = 'block';
+                        document.getElementById('training_btns').style.display = 'block';
+                        progress.style.display = 'none';
+                    }
+                } else {
+                    alert('Failed to save files on the server.');
+                    progress.style.display = 'none';
+
+                }
+            };
+
+            xhr.open('POST', `/upload?userId=${jsonDataString ? jsonDataString.user._id : ''}`, true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.send(JSON.stringify(data));
+
+        } catch (error) {
+            console.error('Error:', error);
+            progress.style.display = 'none';
+
+            alert('An error occurred while saving files on the server.');
+        }
+    }
+}
+
+function updateImageLabel() {
+    const input = document.getElementById('imageUpload');
+    const label = document.getElementById('imageLabel');
+
+    if (input && label) {
+        if (input.files.length > 0) {
+            label.textContent = `Selected files: ${input.files.length}`;
+        } else {
+            label.textContent = `Select image files`;
+        }
+    }
+}
+
+function updateLabelLabel() {
+    const input = document.getElementById('labelUpload');
+    const label = document.getElementById('labelLabel');
+
+    if (input && label) {
+        if (input.files.length > 0) {
+            label.textContent = `Selected files: ${input.files.length}`;
+        } else {
+            label.textContent = `Select label files`;
+        }
+    }
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
 
 function downloadShapefile() {
     // Send an HTTP request to the server to generate the shapefile.

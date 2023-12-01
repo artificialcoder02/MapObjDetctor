@@ -176,28 +176,47 @@ const UserController = {
                 return res.status(400).json({ message: 'User is already verified' });
             }
 
-            user.verified = true;
 
             // Directory paths
             const baseDir = path.join(__dirname, '..', 'userData', `${user._id}`);
             const detectionDir = path.join(baseDir, 'detection');
             const trainingDir = path.join(baseDir, 'training');
+            const runDir = path.join(baseDir, 'runs');
+
             const detectionSubDirs = ['shaper', 'geot', 'geoj', 'image'];
-            const trainingSubDirs = ['annotations', 'images', 'labels', 'model', 'data'];
+            const trainingSubDirs = ['annotations', 'model', 'data'];
+            const runSubDirs = ['detect'];
 
             // Create directories and subdirectories
             await fs.mkdir(baseDir, { recursive: true });
             await fs.mkdir(detectionDir, { recursive: true });
             await fs.mkdir(trainingDir, { recursive: true });
+            await fs.mkdir(runDir, { recursive: true });
 
             for (const subDir of detectionSubDirs) {
                 await fs.mkdir(path.join(detectionDir, subDir), { recursive: true });
             }
 
             for (const subDir of trainingSubDirs) {
-                await fs.mkdir(path.join(trainingDir, subDir), { recursive: true });
+                const currentTrainingSubDir = path.join(trainingDir, subDir);
+
+                // Create additional subdirectories for 'images' and 'labels' within 'annotations'
+                if (subDir === 'annotations') {
+                    const annotationsSubDirs = ['images', 'labels'];
+
+                    for (const annotationSubDir of annotationsSubDirs) {
+                        await fs.mkdir(path.join(currentTrainingSubDir, annotationSubDir), { recursive: true });
+                    }
+                } else {
+                    await fs.mkdir(currentTrainingSubDir, { recursive: true });
+                }
             }
 
+            for (const subDir of runSubDirs) {
+                await fs.mkdir(path.join(runDir, subDir), { recursive: true });
+            }
+
+            user.verified = true;
             await user.save();
             res.status(200).json({ message: 'User verification successful' });
         } catch (error) {

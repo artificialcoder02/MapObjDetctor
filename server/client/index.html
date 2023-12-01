@@ -7,7 +7,9 @@
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.20/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.css" />
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="../vendor/leaflet.editable.measure/leaflet_measure.css" />
     <link rel="stylesheet" href="../vendor/leaflet_1_0_0_rc2/leaflet.css" />
@@ -15,18 +17,17 @@
     <script src="../vendor/Leaflet.Editable.js"></script>
     <script src="../vendor/html2canvas/html2canvas.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
     <script src="../vendor/leaflet.editable.measure/leaflet_measure.js"></script>
-
     <script src="../leaflet_export.js"></script>
     <style>
         body {
             margin: 0;
             padding: 0;
-            background-color: #3498db;
+            background-color: #242526;
         }
 
         .map {
+            margin-top: 60px;
             height: 90%;
             width: 100%;
         }
@@ -42,12 +43,29 @@
             line-height: 20px;
             z-index: 1000;
         }
+
+        #progressBar {
+            height: 20px;
+            background-color: #FF0000;
+            /* Start with red */
+            transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
+        }
+
+        .progress-bar-container {
+            margin-top: 10px;
+        }
+
+        #progressText {
+            text-align: center;
+            margin-top: 5px;
+            color: #333;
+            font-weight: bold;
+        }
     </style>
 </head>
 
 <body>
-
-    <div>
+    
         <div id="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
             <!-- <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
                 <a href="#" onclick="openNav('icon1')"><i class="hoverss"> <p> 10 </p></i></a>
@@ -60,10 +78,76 @@
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
             <!-- Sidebar content here -->
         </div>
-
+       
+        <nav>
+            <div class="wrapper">
+              <div class="logo"><a href="#">Logo</a></div>
+              <input type="radio" name="slider" id="menu-btn">
+              <input type="radio" name="slider" id="close-btn">
+              <ul class="nav-links">
+                <label for="close-btn" class="btn close-btn"><i class="fas fa-times"></i></label>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li>
+                  <a href="#" class="desktop-item">Dropdown Menu</a>
+                  <input type="checkbox" id="showDrop">
+                  <label for="showDrop" class="mobile-item">Dropdown Menu</label>
+                  <ul class="drop-menu">
+                    <li><a href="#">Drop menu 1</a></li>
+                    <li><a href="#">Drop menu 2</a></li>
+                    <li><a href="#">Drop menu 3</a></li>
+                    <li><a href="#">Drop menu 4</a></li>
+                  </ul>
+                </li>
+                <li>
+                  <a href="#" class="desktop-item">Mega Menu</a>
+                  <input type="checkbox" id="showMega">
+                  <label for="showMega" class="mobile-item">Mega Menu</label>
+                  <div class="mega-box">
+                    <div class="content">
+                      <div class="row">
+                        <img src="https://fadzrinmadu.github.io/hosted-assets/responsive-mega-menu-and-dropdown-menu-using-only-html-and-css/img.jpg" alt="">
+                      </div>
+                      <div class="row">
+                        <header>Design Services</header>
+                        <ul class="mega-links">
+                          <li><a href="#">Graphics</a></li>
+                          <li><a href="#">Vectors</a></li>
+                          <li><a href="#">Business cards</a></li>
+                          <li><a href="#">Custom logo</a></li>
+                        </ul>
+                      </div>
+                      <div class="row">
+                        <header>Email Services</header>
+                        <ul class="mega-links">
+                          <li><a href="#">Personal Email</a></li>
+                          <li><a href="#">Business Email</a></li>
+                          <li><a href="#">Mobile Email</a></li>
+                          <li><a href="#">Web Marketing</a></li>
+                        </ul>
+                      </div>
+                      <div class="row">
+                        <header>Security services</header>
+                        <ul class="mega-links">
+                          <li><a href="#">Site Seal</a></li>
+                          <li><a href="#">VPS Hosting</a></li>
+                          <li><a href="#">Privacy Seal</a></li>
+                          <li><a href="#">Website design</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+                <li><a href="#">Feedback</a></li>
+              </ul>
+              <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
+            </div>
+          </nav>
+        <div>
         <div class="upper_box">
-            <div id="titleBar">
-                <!-- Title and buttons go here -->
+            
+            <!-- <div id="titleBar">
+               
                 <h1>SatelliteObjectDetective: Leaflet & YOLOv8 Integration</h1>
                 <div class="heading">
                     <div style="width: 12%;">
@@ -75,7 +159,6 @@
                     justify-content: center;
                     align-items: center;
                 ">
-                        <!-- Add an HTML element for the loading spinner -->
                         <div class="lds-ellipsis" id="loadingSpinner" style="display: none;">
                             <div></div>
                             <div></div>
@@ -84,7 +167,6 @@
                         </div>
 
 
-                        <!-- Add an HTML element for the "Detect Objects" button -->
                         <button id="exportBtn" onclick="downloadMap()" class="capture-button">Detect Objects</button>
                         <button class="pop-button" id="userlogins" onclick="showPopup()">Add Annotations</button>
                         <button class="shaper" id="userloginss" onclick="downloadShapefile()">Download
@@ -95,12 +177,9 @@
                         <p id="userName"></p>
                         <img id="userImage" alt="" />
 
-                        <!-- Dropdown container -->
                         <div class="dropdown">
-                            <!-- Dropdown icon -->
                             <i class="fas fa-cog" onclick="toggleDropdown()"></i>
 
-                            <!-- Dropdown content -->
                             <div class="dropdown-content" id="dropdownMenu">
                                 <a href="#"><i class="fas fa-user"></i> Profile</a>
                                 <a href="#"><i class="fas fa-cogs"></i> Settings</a>
@@ -110,11 +189,12 @@
                     </div>
 
                     <div class="userprofiles" id="usernotlogin">
-                        <a href="/login" style="text-decoration: none; color: #ffff;">                        <p> <i class="fas fa-user-shield" style="margin-left: 3px;"></i> Login / Register</p>
+                        <a href="/login" style="text-decoration: none; color: #ffff;">
+                            <p> <i class="fas fa-user-shield" style="margin-left: 3px;"></i> Login / Register</p>
                         </a>
                     </div>
                 </div>
-            </div>
+            </div> -->
             <!-- <button class="capture-button">Capture and Save</button> -->
 
             <div id="map" class="map" style="z-index: 1;"></div>
@@ -127,29 +207,37 @@
         <div id="popup">
             <div class="popup">
                 <span class="close" onclick="closePopup()">&times;</span>
-                <h2>Upload an Image and Label</h2>
+                <h2>Upload Images and Labels</h2>
                 <div class="center_input">
                     <div class="input-wrapper">
-                        <label for="imageUpload" id="imageLabel" class="file-label">Select an Image (PNG only):</label>
-                        <input type="file" id="imageUpload" accept="image/png" onchange="updateImageLabel()" />
+                        <label for="imageUpload" id="imageLabel" class="file-label">Select Images (PNG only):</label>
+                        <input type="file" id="imageUpload" accept="image/png" onchange="updateImageLabel()" multiple />
                     </div>
                     <div class="input-wrapper">
-                        <label for="labelUpload" id="labelLabel" class="file-label">Select a Label (TXT only):</label>
-                        <input type="file" id="labelUpload" accept=".txt" onchange="updateLabelLabel()" />
+                        <label for="labelUpload" id="labelLabel" class="file-label">Select Labels (TXT only):</label>
+                        <input type="file" id="labelUpload" accept=".txt" onchange="updateLabelLabel()" multiple />
                     </div>
                 </div>
                 <div class="button_center">
                     <button onclick="save()" class="save-button">Save Files</button>
                 </div>
 
+                <div class="progress-bar-container" id="prbar">
+                    <div id="progressBar"></div>
+                    <div id="progressText">0%</div>
+                </div>
                 <div class="traing_btn">
-                    <a href="/training" style="text-decoration: none;"> <button id="training_btn"
-                            class="save-button">Training from Scratch</button> </a>
-                    <a href="/pretrained" style="text-decoration: none;"> <button id="training_btns" class="save-button"
-                            style="margin-left: 20px;">Training from Pretrained</button> </a>
+                    <a href="/training" style="text-decoration: none;">
+                        <button id="training_btn" class="save-button">Training from Scratch</button>
+                    </a>
+                    <a href="/pretrained" style="text-decoration: none;">
+                        <button id="training_btns" class="save-button" style="margin-left: 20px;">Training from
+                            Pretrained</button>
+                    </a>
                 </div>
             </div>
         </div>
+
     </div>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.20/dist/sweetalert2.all.min.js"></script>
     <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
