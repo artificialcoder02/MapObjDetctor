@@ -6,17 +6,19 @@ progressBar.style.display = 'none';
 
 document.getElementById('popup').style.display = 'none';
 const userLoginDivBtn = document.getElementById('userlogins');
-const userLoginDivBtntwo = document.getElementById('userloginss');
-
-// userLoginDivBtntwo.style.display = 'none';
+const userLoginDivBtntwo = document.getElementById('dropdown');
+const training = document.getElementById('training');
+training.style.display ="none";
+userLoginDivBtntwo.style.display = 'none';
 // userLoginDivBtn.style.display = 'none';
 
 document.getElementById('training_btn').style.display = 'none';
 document.getElementById('training_btns').style.display = 'none';
 
-var loadingSpinner = document.getElementById("loadingSpinner");
+let menubars = document.getElementById("menubar");
+let loadingSpinner = document.getElementById("loadingSpinner");
+loadingSpinner.style.display = 'none';
 var detectButton = document.getElementById("exportBtn");
-
 
 function showSuccess(message) {
     Swal.fire({
@@ -64,37 +66,103 @@ const checkLoginStatus = async () => {
     }
 };
 
+
+
+async function fetchData() {
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
+    const response = await fetch(`/files?userId=${jsonDataString ? jsonDataString.user._id : ''}`);
+    const resp = await response.json();
+
+    // Set the JSON response in session storage
+    sessionStorage.setItem('responseData', JSON.stringify(resp));
+
+    // Clear existing content in the lists
+    clearList('defaultList');
+    clearList('userList');
+
+    // Retrieve the data from session storage
+    const storedData = sessionStorage.getItem('responseData');
+    const data = JSON.parse(storedData);
+
+    // Now, 'data' contains the JSON response
+    // console.log('Data:', data);
+
+    // You can use the 'data' variable as needed in your script
+    // For example, populate lists using the createListItems function
+    createListItems(data.defaultFiles, 'defaultList');
+    createListItems(data.userFiles, 'userList');
+
+    function createListItems(files, listId) {
+        const list = document.getElementById(listId);
+
+        // Check if the files array is empty
+        if (files.length === 0) {
+            const listItem = document.createElement('li');
+            const anchor = document.createElement('a');
+            anchor.href = '#';  // You can set the href as needed
+            anchor.textContent = 'No user models available';
+            listItem.appendChild(anchor);
+            list.appendChild(listItem);
+            return;
+        }
+
+        const items = files.map(file => {
+            const listItem = document.createElement('li');
+            const anchor = document.createElement('a');
+            anchor.href = '#';  // You can set the href as needed
+            anchor.textContent = file.filename;
+            anchor.onclick = () => handleClick(file.path);
+            listItem.appendChild(anchor);
+            return listItem;
+        });
+        list.append(...items);
+    }
+}
+
+// Function to clear list content
+function clearList(listId) {
+    const list = document.getElementById(listId);
+    while (list.firstChild) {
+        list.removeChild(list.firstChild);
+    }
+}
+
+
+// Function to handle click events
+function handleClick(url) {
+    console.log('Clicked on:', url);
+    if(!url){
+        alert('You dont have any model stored!');
+        return;
+    }else{
+        downloadMap(url);
+    }
+    // Add your logic here to use the URL as needed
+}
+
+
+
 // Function to check login status and update local storage every 3 seconds
 const checkAndUpdateLoginStatus = async () => {
     const loginStatus = await checkLoginStatus();
 
+    fetchData();
+
     // Check if the user is logged in
     if (loginStatus.isLoggedIn) {
         // Get references to the userName and userImage elements
-        const userNameElement = document.getElementById('userName');
-        const userImageElement = document.getElementById('userImage');
-        const usenot = document.getElementById('usernotlogin');
-        const userLoginDiv = document.getElementById('userlogin');
+        const userNameElement = document.getElementById('userNames');
         userLoginDivBtntwo.style.display = 'block';
-        userLoginDivBtn.style.display = 'block';
+        training.style.display ="inline";
 
         // Set the text content of the userName element to the user's name
         userNameElement.textContent = loginStatus.user.user.name;
-
-        // Set the src attribute of the userImage element to the user's profile image
-        userImageElement.src = loginStatus.user.user.profileimage;
-
-        // Show the userlogin div
-        userLoginDiv.style.display = 'flex';
-        usenot.style.display = 'none';
-
         // Update user details in local storage
         localStorage.setItem('user', JSON.stringify(loginStatus.user));
     } else {
-        // Hide the userlogin div
-        userLoginDiv.style.display = 'none';
-        usenot.style.display = 'block';
-        // Clear user details from local storage if not logged in (optional)
+        const userNameElement = document.getElementById('userNames');
+        userNameElement.textContent = 'Login / Register';
         localStorage.removeItem('user');
         sessionStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -138,6 +206,7 @@ var baseExportOptions = {
         position: [100, 200]
     }
 };
+
 var map = L.map('map', {
     editable: true,
     printable: true,
@@ -193,15 +262,16 @@ var geocoder = L.Control.geocoder({
 }).addTo(map);
 
 
-function downloadMap(caption) {
+function downloadMap(url) {
     const jsonDataString = JSON.parse(localStorage.getItem('user'));
 
     loadingSpinner.style.display = 'block';
-    detectButton.style.display = 'none';
+    menubars.style.display = 'none';
+
     var downloadOptions = {
         container: map._container,
         caption: {
-            text: caption,
+            text: baseExportOptions.caption,
             font: '30px Poppins',
             fillStyle: 'black',
             position: [100, 200]
@@ -229,7 +299,7 @@ function downloadMap(caption) {
         // Send the base64Data to the server using an HTTP POST request
         fetch('/save-captured-image', {
             method: 'POST',
-            body: JSON.stringify({ image: result, northWest: northWest, southEast: southEast, userId: jsonDataString ? jsonDataString.user._id : '' }),
+            body: JSON.stringify({ image: result, northWest: northWest, southEast: southEast, userId: jsonDataString ? jsonDataString.user._id : '', modelPath: url }),
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -238,7 +308,8 @@ function downloadMap(caption) {
                 console.log(response);
                 if (!response.ok) {
                     loadingSpinner.style.display = 'none';
-                    detectButton.style.display = 'block';
+                    menubar.style.display = 'none';
+
                     throw new Error('Network response was not ok');
                 }
                 return response.json(); // Parse the response body as JSON
@@ -274,13 +345,13 @@ function downloadMap(caption) {
                 // Update the content of the icons based on the detected classes
                 updateIconContentOnPage(classes, color, objectsPerClass, totalClasses);
                 loadingSpinner.style.display = 'none';
-                detectButton.style.display = 'block';
+                menubars.style.display = 'flex';
             })
             .catch((error) => {
                 // Handle any errors that occur during the fetch request or JSON parsing
                 console.error('Error:', error);
                 loadingSpinner.style.display = 'none';
-                detectButton.style.display = 'block';
+                menubars.style.display = 'flex';
             });
         return result;
     });

@@ -64,88 +64,89 @@
     </style>
 </head>
 
-<body>
-    
-        <div id="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
-            <!-- <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
+<body onload="fetchData()">
+
+    <div id="iconBar" class="icon-bar" style="overflow-y: scroll; height: 20vh ; z-index: 2;">
+        <!-- <div class="icon" onmouseover="showLabel('label1')" onmouseout="hideLabel('label1')">
                 <a href="#" onclick="openNav('icon1')"><i class="hoverss"> <p> 10 </p></i></a>
                 <div class="label" id="label1"><p>name1</p></div>
             </div>
              -->
-        </div>
+    </div>
 
-        <div id="sidebar" class="sidebar">
-            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-            <!-- Sidebar content here -->
-        </div>
-       
-        <nav>
-            <div class="wrapper">
-              <div class="logo"><a href="#">Logo</a></div>
-              <input type="radio" name="slider" id="menu-btn">
-              <input type="radio" name="slider" id="close-btn">
-              <ul class="nav-links">
+    <div id="sidebar" class="sidebar">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <!-- Sidebar content here -->
+    </div>
+
+    <nav>
+        <div class="wrapper">
+            <div class="logo"><a href="#">Logo</a></div>
+            <input type="radio" name="slider" id="menu-btn">
+            <input type="radio" name="slider" id="close-btn">
+            <ul class="nav-links" id="menubar" >
                 <label for="close-btn" class="btn close-btn"><i class="fas fa-times"></i></label>
-                <li><a href="#">Home</a></li>
-                <li><a href="#">About</a></li>
                 <li>
-                  <a href="#" class="desktop-item">Dropdown Menu</a>
-                  <input type="checkbox" id="showDrop">
-                  <label for="showDrop" class="mobile-item">Dropdown Menu</label>
-                  <ul class="drop-menu">
-                    <li><a href="#">Drop menu 1</a></li>
-                    <li><a href="#">Drop menu 2</a></li>
-                    <li><a href="#">Drop menu 3</a></li>
-                    <li><a href="#">Drop menu 4</a></li>
-                  </ul>
-                </li>
-                <li>
-                  <a href="#" class="desktop-item">Mega Menu</a>
-                  <input type="checkbox" id="showMega">
-                  <label for="showMega" class="mobile-item">Mega Menu</label>
-                  <div class="mega-box">
-                    <div class="content">
-                      <div class="row">
-                        <img src="https://fadzrinmadu.github.io/hosted-assets/responsive-mega-menu-and-dropdown-menu-using-only-html-and-css/img.jpg" alt="">
-                      </div>
-                      <div class="row">
-                        <header>Design Services</header>
-                        <ul class="mega-links">
-                          <li><a href="#">Graphics</a></li>
-                          <li><a href="#">Vectors</a></li>
-                          <li><a href="#">Business cards</a></li>
-                          <li><a href="#">Custom logo</a></li>
-                        </ul>
-                      </div>
-                      <div class="row">
-                        <header>Email Services</header>
-                        <ul class="mega-links">
-                          <li><a href="#">Personal Email</a></li>
-                          <li><a href="#">Business Email</a></li>
-                          <li><a href="#">Mobile Email</a></li>
-                          <li><a href="#">Web Marketing</a></li>
-                        </ul>
-                      </div>
-                      <div class="row">
-                        <header>Security services</header>
-                        <ul class="mega-links">
-                          <li><a href="#">Site Seal</a></li>
-                          <li><a href="#">VPS Hosting</a></li>
-                          <li><a href="#">Privacy Seal</a></li>
-                          <li><a href="#">Website design</a></li>
-                        </ul>
-                      </div>
+                    <a href="#" class="desktop-item">Detect Objects</a>
+                  
+                    <input type="checkbox" id="showMega">
+                    <label for="showMega" class="mobile-item">Mega Menu</label>
+                    <div class="mega-box">
+                        <div class="content">
+                            <div class="row" id="defaultModel">
+                                <header>Default Model</header>
+                               
+                                <ul id="defaultList" class="mega-links" style="padding-inline-start: 0;"></ul>
+                            </div>
+
+                            <div class="row" id="userModel">
+                                <header>User Model</header>
+                                <ul id="userList" class="mega-links" style="padding-inline-start: 0;"></ul>
+                            </div>
+                            <!-- <div class="row">
+                                <header>Other</header>
+                                <ul class="mega-links" style="padding-inline-start: 0;">
+                                    <li><a href="#">Site Seal</a></li>
+                                </ul>
+                            </div> -->
+                        </div>
                     </div>
-                  </div>
                 </li>
-                <li><a href="#">Feedback</a></li>
-              </ul>
-              <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
-            </div>
-          </nav>
-        <div>
-        <div class="upper_box">
+                <li><a href="#" id="training" onclick="showPopup()">Initiate New Training</a></li>
+            </ul>
+
+            <ul class="nav-links" id="loadingSpinner" >
+                <div class="lds-ellipsis" >
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </ul>
             
+            <ul class="nav-links">
+
+                <li>
+                    <a href="/login" class="desktop-item" id="userName"
+                        style="display: flex; align-items: center; height: 20px;"> <i class="fas fa-user-shield"
+                            style="margin-right: 10px;"></i>
+                        <p style="padding: 0; margin: 0; " id="userNames"></p>
+                    </a>
+                    <input type="checkbox" id="showDrop">
+                    <label for="showDrop" class="mobile-item">Dropdown Menu</label>
+                    <ul class="drop-menu" style="padding-inline-start: 0;" id="dropdown">
+                        <li> <a href="#"><i class="fas fa-user"></i> Profile</a></li>
+                        <li><a href="#"><i class="fas fa-cogs"></i> Settings</a></li>
+                        <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
+        </div>
+    </nav>
+    <div>
+        <div class="upper_box">
+
             <!-- <div id="titleBar">
                
                 <h1>SatelliteObjectDetective: Leaflet & YOLOv8 Integration</h1>
@@ -239,6 +240,8 @@
         </div>
 
     </div>
+
+  
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.20/dist/sweetalert2.all.min.js"></script>
     <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
 
