@@ -125,7 +125,7 @@ app.get('/files', async (req, res) => {
 });
 
 app.post('/save-captured-image', (req, res) => {
-    const { image, northWest, southEast, userId } = req.body;
+    const { image, northWest, southEast, userId, modelPath } = req.body;
     const fs = require('fs');
     const path = require('path'); // Import the path module
 
@@ -163,7 +163,7 @@ app.post('/save-captured-image', (req, res) => {
         const imagePer = userId ? path.join(__dirname, 'userData', `${userId}`, 'runs', 'detect', newExpFolder, fileName) : path.join(__dirname, 'runs', 'detect', newExpFolder, fileName);
         // erform object detection using YOLOv5 on the saved PNG file
 
-        const modelPath = path.join(__dirname, 'best.pt');
+        // const modelPath = path.join(__dirname, 'best.pt');
         const userPath = path.join(__dirname, 'userData', `${userId}`);
 
         if (userId) {
@@ -211,7 +211,7 @@ app.post('/save-captured-image', (req, res) => {
         const modelDaynamic = path.join(__dirname, 'best.pt');
 
 
-        exec(`python ${modelPathNew} --model ${modelDaynamic} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`, (error, stdout, stderr) => {
+        exec(`python ${modelPathNew} --model ${modelPath} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing latlong conversion' }); ˀ
