@@ -13,7 +13,7 @@ const connectMongo = require("./config/db/config.js");
 const userRouter = require('./router/userRoute.js')
 const util = require('util');
 const readdirAsync = util.promisify(fs.readdir);
-
+process.env.PROJ_LIB = "C:\\ProgramData\\anaconda3\\pkgs\\proj-6.2.1-h3758d61_0\\Library\\share\\proj";
 // app.use(express.json());
 connectMongo();
 app.use(cors({
@@ -23,32 +23,47 @@ app.use(cors({
 
 app.use('/api/v0.1/', userRouter);
 
+Set 
+
 // Directory where image files are stored
 const imageFolder = path.join(__dirname, 'image');
+// Check if the directory exists
+if (!fs.existsSync(imageFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(imageFolder);
+}
 
 // Get a list of image files in the folder
 const imageFiles = fs.readdirSync(imageFolder).filter(file => file.endsWith('.png'));
 
-// Sort the list of image files by creation time (most recent first)
-imageFiles.sort((fileA, fileB) => {
-    return fs.statSync(path.join(imageFolder, fileB)).ctime.getTime() - fs.statSync(path.join(imageFolder, fileA)).ctime.getTime();
-});
-
-// Check if there are any image files in the folder
-if (imageFiles.length === 0) {
-    console.error('No image files found in the folder.');
-    return res.status(500).json({ error: 'No image files found' });
+// Directory where model files are stored
+const modelFolder = path.join(__dirname, 'model');
+// Check if the directory exists
+if (!fs.existsSync(modelFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(modelFolder);
 }
 
-// Choose the most recent image file
-const mostRecentImage = path.join(imageFolder, imageFiles[0]);
+// // Sort the list of image files by creation time (most recent first)
+// imageFiles.sort((fileA, fileB) => {
+//     return fs.statSync(path.join(imageFolder, fileB)).ctime.getTime() - fs.statSync(path.join(imageFolder, fileA)).ctime.getTime();
+// });
 
-// Get the image dimensions synchronously
-const dimensions = sizeOf(mostRecentImage);
+// // Check if there are any image files in the folder
+// if (imageFiles.length === 0) {
+//     console.error('No image files found in the folder.');
+//     return res.status(500).json({ error: 'No image files found' });
+// }
 
-// Extract the width and height
-const imageWidth = dimensions.width;
-const imageHeight = dimensions.height;
+// // Choose the most recent image file
+// const mostRecentImage = path.join(imageFolder, imageFiles[0]);
+
+// // Get the image dimensions synchronously
+// const dimensions = sizeOf(mostRecentImage);
+
+// // Extract the width and height
+// const imageWidth = dimensions.width;
+// const imageHeight = dimensions.height;
 
 
 // Serve the HTML file for the root URL
@@ -176,7 +191,7 @@ app.post('/save-captured-image', (req, res) => {
 
         exec(`yolo detect predict model='${modelPath}' source='${imagePath}'`, (error, stdout, stderr) => {
             if (error) {
-                return res.status(500).json({ error: 'Error performing object detection' });
+                return console.log({ error: 'Error performing object detection' });
             }
             console.log(stderr);
 
@@ -220,13 +235,15 @@ app.post('/save-captured-image', (req, res) => {
             console.log(stdout);
             // Read the directory
             fs.readdir(directoryPath, (err, files) => {
+                
                 if (err) {
                     console.error('Error reading directory:', err);
                     return res.status(500).json({ error: 'Error reading directory' });
                 } else {
                     // Filter the files with the pattern "output_<number>.geojson"
                     const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
-
+                    
+               
                     // Sort the files by the creation time
                     geojsonFiles.sort((fileA, fileB) => {
                         return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
@@ -237,15 +254,18 @@ app.post('/save-captured-image', (req, res) => {
 
                     // Read the file and load the data into a variable
                     fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
+                        console.log(err);
+                        
                         if (err) {
                             console.error('Error reading file:', err);
-                            return res.status(500).json({ error: 'Error reading file' });
+                            return;
                         } else {
                             try {
                                 const jsonData = JSON.parse(data); // assuming the file contains JSON data
-                                // Use the jsonData variable as required
+                                // Use the jsonData variable as required/
+                                // console.log(jsonData);
                                 console.log('Loaded data:', jsonData);
-                                return res.json({ geojson: jsonData });
+                                return res.status(200).json({ geojson: jsonData });
                             } catch (error) {
                                 console.error('Error parsing JSON data:', error);
                                 return res.status(500).json({ error: 'Error parsing JSON data' });

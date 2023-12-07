@@ -8,6 +8,8 @@ from osgeo import osr
 from ultralytics import YOLO
 import random 
 
+os.environ["PROJ_LIB"] = r"C:\ProgramData\anaconda3\pkgs\proj-6.2.1-h3758d61_0\Library\share\proj"
+
 
 def pixel_to_latlng(pixel_x, pixel_y, dataset):
     transform = dataset.GetGeoTransform()
