@@ -271,7 +271,7 @@ function downloadMap(url) {
     var downloadOptions = {
         container: map._container,
         caption: {
-            text: baseExportOptions.caption,
+            text: '',
             font: '30px Poppins',
             fillStyle: 'black',
             position: [100, 200]
@@ -318,6 +318,7 @@ function downloadMap(url) {
                 // Handle the received data
                 console.log(data.geojson);
                 var myLayer = L.geoJSON(data.geojson, {
+                    crs: L.CRS.EPSG4326,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
@@ -328,6 +329,7 @@ function downloadMap(url) {
                 }).addTo(map);
 
                 var myLayer = L.geoJSON(data.geojson, {
+                    crs: L.CRS.EPSG4326,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
@@ -498,6 +500,7 @@ async function fetchRecentGeoJSONAll() {
 
                 // Add new data to the map
                 const newLayer = L.geoJSON(data, {
+                    crs: L.CRS.EPSG4326,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
@@ -544,6 +547,7 @@ async function updateGeoJSONLayer(className) {
 
                 // Add new data
                 const newLayer = L.geoJSON(data.geojson, {
+                    crs: L.CRS.EPSG4326,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified

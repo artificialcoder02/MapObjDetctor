@@ -188,23 +188,24 @@ app.post('/save-captured-image', (req, res) => {
                 // console.log(`Changed working directory to: ${userPath}`);
             }
         }
+        
+        //Enable this block of code to save the object detection output for debugging
+        // exec(`yolo detect predict model='${modelPath}' source='${imagePath}'`, (error, stdout, stderr) => {
+        //     if (error) {
+        //         return console.log({ error: 'Error performing object detection' });
+        //     }
+        //     console.log(stderr);
 
-        exec(`yolo detect predict model='${modelPath}' source='${imagePath}'`, (error, stdout, stderr) => {
-            if (error) {
-                return console.log({ error: 'Error performing object detection' });
-            }
-            console.log(stderr);
+        //     const processedImageData = fs.readFileSync(imagePer, 'base64');
+        //     // Send the processed image as base64 in the response
+        //     // return res.json({ processedImage: processedImageData });
 
-            const processedImageData = fs.readFileSync(imagePer, 'base64');
-            // Send the processed image as base64 in the response
-            // return res.json({ processedImage: processedImageData });
-
-            // If you changed the directory, you might want to change it back to the original directory
-            if (fs.existsSync(userPath)) {
-                process.chdir(__dirname);
-                // console.log(`Changed working directory back to: ${__dirname}`);
-            }
-        });
+        //     // If you changed the directory, you might want to change it back to the original directory
+        //     if (fs.existsSync(userPath)) {
+        //         process.chdir(__dirname);
+        //         // console.log(`Changed working directory back to: ${__dirname}`);
+        //     }
+        // });
 
 
         const geoTiffFileName = `${path.basename(imagePath, path.extname(imagePath))}.tif`; // Construct the GeoTIFF file name
@@ -218,7 +219,7 @@ app.post('/save-captured-image', (req, res) => {
                 return res.status(500).json({ error: 'Error constructing tif file' });
             }
             console.log(stdout);
-            // Instead of reading the processed image from a file, you can directly convert it to base64
+            console.log("Geotiff was created successfully!")
         });
 
 
