@@ -14,8 +14,9 @@
 *.cache
 *.tfevents
 
-/dependencies
-/mapobj
+\dependencies
+\mapobj
+\newmap
 
 # testing
 /coverage

@@ -1,28 +1,22 @@
 import argparse
 import json
-import geojson
 import os
-#import rasterio
-from osgeo import gdal
-from osgeo import osr
+import rasterio
+from shapely.geometry import Polygon
+import geojson
 from ultralytics import YOLO
 import random 
 
+os.environ["PROJ_LIB"] = r"C:\ProgramData\anaconda3\pkgs\proj-6.2.1-h3758d61_0\Library\share\proj"
 
-def pixel_to_latlng(pixel_x, pixel_y, dataset):
-    transform = dataset.GetGeoTransform()
-    x = transform[0] + pixel_x * transform[1] + pixel_y * transform[2]
-    y = transform[3] + pixel_x * transform[4] + pixel_y * transform[5]
+def pixel_to_latlng(pixel_x, pixel_y, src):
+    # Get the transform from pixel coordinates to geographic coordinates
+    transform = src.transform
 
-    # Get the spatial reference system of the dataset
-    srs = osr.SpatialReference()
-    srs.ImportFromWkt(dataset.GetProjection())
+    # Calculate the geographic coordinates
+    lon, lat = transform * (pixel_x, pixel_y)
 
-    # Create a transformer to convert the coordinates
-    transformer = osr.CoordinateTransformation(srs, srs.CloneGeogCS())
-
-    # Transform the x, y coordinates to latitude and longitude
-    lon, lat, _ = transformer.TransformPoint(x, y)
+    #print(f"Pixel: ({pixel_x}, {pixel_y}) -> LonLat: ({lon}, {lat})")
 
     return lat, lon
 
@@ -40,37 +34,30 @@ def get_next_file_number(output_folder):
 def run_inference(model_path, source_image):
     model = YOLO(model_path)
 
-    # Open the GeoTIFF file with gdal
-    dataset = gdal.Open(source_image, gdal.GA_ReadOnly)
-    if dataset is None:
-        raise Exception(f"Failed to open the source image: {source_image}")
+    # Open the GeoTIFF file with rasterio
+    with rasterio.open(source_image) as src:
+        results = model(source_image)
+        detections = []
 
-    # Get the transform from pixel coordinates to geographic coordinates
-    transform = dataset.GetGeoTransform()
+        for result in results:
+            pre = json.loads(result.tojson())
 
-    results = model(source_image)
-    detections = []
+            for item in pre:
+                box = item.get("box")
+                x1 = box.get("x1")
+                y1 = box.get("y1")
+                x2 = box.get("x2")
+                y2 = box.get("y2")
 
-    for result in results:
-        pre = json.loads(result.tojson())
+                # Convert pixel coordinates to latitude and longitude
+                lat1, lon1 = pixel_to_latlng(x1, y1, src)
+                lat2, lon2 = pixel_to_latlng(x2, y2, src)
 
-        #print(pre)
-        for item in pre:
-            box = item.get("box")
-            x1 = box.get("x1")
-            y1 = box.get("y1")
-            x2 = box.get("x2")
-            y2 = box.get("y2")
-            
-            # Convert pixel coordinates to latitude and longitude
-            lat1, lon1 = pixel_to_latlng(x1, y1, dataset)
-            lat2, lon2 = pixel_to_latlng(x2, y2, dataset)
-
-            item["lat1"] = lat1
-            item["lng1"] = lon1
-            item["lat2"] = lat2
-            item["lng2"] = lon2
-            detections.append(item)
+                item["lat1"] = lat1
+                item["lng1"] = lon1
+                item["lat2"] = lat2
+                item["lng2"] = lon2
+                detections.append(item)
 
     return detections
 

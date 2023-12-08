@@ -15,6 +15,7 @@ const connectMongo = require("./config/db/config.js");
 const userRouter = require('./router/userRoute.js')
 const util = require('util');
 const readdirAsync = util.promisify(fs.readdir);
+process.env.PROJ_LIB = "C:\\ProgramData\\anaconda3\\pkgs\\proj-6.2.1-h3758d61_0\\Library\\share\\proj";
 
 // app.use(express.json());
 connectMongo();
@@ -95,29 +96,57 @@ app.get("/ptr-retrained", (req, res) => {
 app.get('/files', async (req, res) => {
     try {
         const userId = req.query.userId;
-        if(userId){
+        if (userId) {
             const baseFolderPath = path.join(__dirname, 'userData');
             const defaultModelFolderPath = path.join(__dirname, 'model');
-            const userFolderPath = path.join(baseFolderPath, `${userId}`, 'training', 'runs', 'detect');
             const defaultFiles = await readdirAsync(defaultModelFolderPath);
+            const userFolderPath = path.join(baseFolderPath, `${userId}`, 'training', 'runs', 'detect');
+            // Create the directory recursively
+            fs.mkdirSync(userFolderPath, { recursive: true }, (err) => {
+                if (err) {
+                    console.error(`Error creating directory: ${userFolderPath}`, err);
+                } else {
+                    console.log(`Directory created: ${userFolderPath}`);
+                }
+            });
             const userFiles = await readdirAsync(userFolderPath);
-    
+
             const constructFileObject = (folderPath, file) => {
                 const filePath = path.join(folderPath, file);
                 const fileName = path.parse(file).name;
-    
+
                 return {
                     filename: fileName,
                     path: filePath,
                 };
             };
-    
+
             const defaultFileObjects = defaultFiles.map(file => constructFileObject(defaultModelFolderPath, file));
             const userFileObjects = userFiles.map(folder => constructFileObject(userFolderPath, folder));
-    
+
             res.json({
                 defaultFiles: defaultFileObjects,
                 userFiles: userFileObjects,
+            });
+        }
+        else {
+            const defaultModelFolderPath = path.join(__dirname, 'model');
+            const defaultFiles = await readdirAsync(defaultModelFolderPath);
+
+            const constructFileObject = (folderPath, file) => {
+                const filePath = path.join(folderPath, file);
+                const fileName = path.parse(file).name;
+
+                return {
+                    filename: fileName,
+                    path: filePath,
+                };
+            };
+            const defaultFileObjects = defaultFiles.map(file => constructFileObject(defaultModelFolderPath, file));
+
+            res.json({
+                defaultFiles: defaultFileObjects,
+                userFiles: '',
             });
         }
     } catch (error) {
@@ -176,7 +205,7 @@ app.post('/save-captured-image', (req, res) => {
 
         exec(`yolo detect predict model='${modelPath}' source='${imagePath}'`, (error, stdout, stderr) => {
             if (error) {
-                return res.status(500).json({ error: 'Error performing object detection' });
+                return console.log({ error: 'Error performing object detection' });
             }
             console.log(stderr);
 
@@ -494,6 +523,18 @@ app.get('/training-from-scratch', (req, res) => {
     // Change the working directory to the target directory
     process.chdir(targetDirectory);
 
+    // Get the current working directory after the change
+    const newWorkingDirectory = process.cwd();
+
+    // Check if the working directory has changed
+    if (originalDirectory !== newWorkingDirectory) {
+        console.log('Working directory changed.');
+        console.log('Initial working directory:', originalDirectory);
+        console.log('New working directory:', newWorkingDirectory);
+    } else {
+        console.log('Working directory did not change.');
+        console.log('Current working directory:', newWorkingDirectory);
+    }
     // Command to start TensorBoard
     const tensorboardCmd = `tensorboard --logdir ${path.join(__dirname, 'runs')}`;
     const tensorboardProcess = exec(tensorboardCmd);
