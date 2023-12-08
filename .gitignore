@@ -9,9 +9,16 @@
 .pnp.js
 *.pt
 .env
+*.yaml
+*.csv
+*.cache
+*.tfevents
 
 # testing
 /coverage
+/server/runs/detect/
+/server/UserData
+/server/datasets
 
 # production
 /build

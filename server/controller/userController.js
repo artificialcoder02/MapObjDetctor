@@ -77,12 +77,12 @@ const UserController = {
             }
 
             const token = await user.generateAuthToken();
-            res.cookie('token', token, {
+            res.cookie("jwt", token, {
                 maxAge: 12 * 60 * 60 * 1000,
-                secure: true, // Set to true in production over HTTPS
+                sameSite: "None",
+                secure: true,
                 httpOnly: true,
-                sameSite: 'none',
-            });
+              });
 
             res.send({ user, token });
         } catch (error) {
@@ -91,6 +91,32 @@ const UserController = {
         }
     },
 
+    logoutss : async (req, res) => {
+        try {
+            const token = req.cookies.jwt;
+            const decoded = jwt.verify(token, process.env.JWT_TOKEN);
+
+            const user = await User.findOne({ _id: decoded._id, 'tokens.token': token });
+
+            if (!user) {
+                throw new Error();
+            }
+
+            // Clear the "jwt" cookie
+            res.cookie("jwt", "", {
+                maxAge: 0,
+                sameSite: "None",
+                secure: true,
+                httpOnly: true,
+            });
+    
+            res.send({ message: "Logout successful" });
+        } catch (error) {
+            console.error(error);
+            res.status(500).send({ error: "Internal Server Error" });
+        }
+    },
+    
     getUserDetails: async (req, res) => {
         try {
             res.send(req.user);
@@ -101,7 +127,9 @@ const UserController = {
     },
 
     logout: async (req, res) => {
+
         try {
+
             req.user.tokens = req.user.tokens.filter((token) => token.token !== req.token);
             await req.user.save();
             res.send('Logout successful');
@@ -184,7 +212,7 @@ const UserController = {
             const runDir = path.join(baseDir, 'runs');
 
             const detectionSubDirs = ['shaper', 'geot', 'geoj', 'image'];
-            const trainingSubDirs = ['annotations', 'model', 'data'];
+            const trainingSubDirs = ['annotations1', 'model', 'data'];
             const runSubDirs = ['detect'];
 
             // Create directories and subdirectories
@@ -201,7 +229,7 @@ const UserController = {
                 const currentTrainingSubDir = path.join(trainingDir, subDir);
 
                 // Create additional subdirectories for 'images' and 'labels' within 'annotations'
-                if (subDir === 'annotations') {
+                if (subDir === 'annotations1') {
                     const annotationsSubDirs = ['images', 'labels'];
 
                     for (const annotationSubDir of annotationsSubDirs) {
@@ -227,7 +255,7 @@ const UserController = {
 
     checkLoginStatus: async (req, res) => {
         try {
-            const token = req.header('Authorization').replace('Bearer ', '');
+            const token = req.cookies.jwt;
             const decoded = jwt.verify(token, process.env.JWT_TOKEN);
 
             const user = await User.findOne({ _id: decoded._id, 'tokens.token': token });

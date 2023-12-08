@@ -14,7 +14,7 @@ router.post('/login', UserController.login);
 router.get('/user', authenticationMiddleware, UserController.getUserDetails);
 
 // Logout Route (requires authentication middleware)
-router.post('/logout', authenticationMiddleware, UserController.logout);
+router.get('/logout', UserController.logoutss);
 
 // Forgot Password Route
 router.post('/forgot-password', UserController.forgotPassword);

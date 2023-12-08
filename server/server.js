@@ -7,6 +7,8 @@ const cors = require("cors");
 const dotenv = require('dotenv').config();
 const sizeOf = require('image-size');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const WebSocket = require('ws');
 app.use(bodyParser.json({ limit: '10000mb' }));
 const multer = require('multer');
 const connectMongo = require("./config/db/config.js");
@@ -20,6 +22,9 @@ app.use(cors({
     origin: '*',
     credentials: true
 }));
+
+// Use the cookie-parser middleware
+app.use(cookieParser());
 
 app.use('/api/v0.1/', userRouter);
 
@@ -70,59 +75,57 @@ app.get("/verify-user", (req, res) => {
 });
 
 app.use(express.static("client"));
-app.get("/training", (req, res) => {
+app.get("/training-loger", (req, res) => {
     res.sendFile(path.resolve(__dirname, "client", "training.html"));
-});
+})
+app.get("/training", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "training_landing.html"));
+})
+
+app.get("/tr-scratch", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "training_scratch.html"));
+})
 
 app.use(express.static("client"));
-app.get("/pretrained", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "client", "pretrained.html"));
+app.get("/ptr-retrained", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "training_pretrained.html"));
 });
 
 
 app.get('/files', async (req, res) => {
     try {
-        const baseFolderPath = path.join(__dirname, 'userData');
-        const defaultModelFolderPath = path.join(__dirname, 'model');
-        let userId = req.query.userId;
-
-        const defaultFiles = await readdirAsync(defaultModelFolderPath);
-
-        let userFiles = [];
-        let userFolderPath
-        if (userId) {
-            userFolderPath = path.join(baseFolderPath, `${userId}`, 'training', 'model');
-            // Read the files in the specified user folder
-
-            userFiles = await readdirAsync(userFolderPath);
-        }
-
-        const constructFileObject = (folderPath, file) => {
-            const filePath = path.join(folderPath, file);
-            const fileName = path.parse(file).name;
-
-            // Construct the file object
-            return {
-                filename: fileName,
-                path: filePath,
+        const userId = req.query.userId;
+        if(userId){
+            const baseFolderPath = path.join(__dirname, 'userData');
+            const defaultModelFolderPath = path.join(__dirname, 'model');
+            const userFolderPath = path.join(baseFolderPath, `${userId}`, 'training', 'runs', 'detect');
+            const defaultFiles = await readdirAsync(defaultModelFolderPath);
+            const userFiles = await readdirAsync(userFolderPath);
+    
+            const constructFileObject = (folderPath, file) => {
+                const filePath = path.join(folderPath, file);
+                const fileName = path.parse(file).name;
+    
+                return {
+                    filename: fileName,
+                    path: filePath,
+                };
             };
-        };
-
-        // Create an array to store the file objects
-        const defaultFileObjects = defaultFiles.map(file => constructFileObject(defaultModelFolderPath, file));
-
-        const userFileObjects = userFiles.map(file => constructFileObject(userFolderPath, file));
-
-       // Send the arrays of file objects as separate JSON properties
-       res.json({
-        defaultFiles: defaultFileObjects,
-        userFiles: userFileObjects,
-    });
+    
+            const defaultFileObjects = defaultFiles.map(file => constructFileObject(defaultModelFolderPath, file));
+            const userFileObjects = userFiles.map(folder => constructFileObject(userFolderPath, folder));
+    
+            res.json({
+                defaultFiles: defaultFileObjects,
+                userFiles: userFileObjects,
+            });
+        }
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 app.post('/save-captured-image', (req, res) => {
     const { image, northWest, southEast, userId, modelPath } = req.body;
@@ -148,9 +151,6 @@ app.post('/save-captured-image', (req, res) => {
 
         // Find the highest existing experiment number in the "yolov5/runs/detect" directory
         const detectDir = userId ? path.join(__dirname, 'userData', `${userId}`, 'runs', 'detect') : path.join(__dirname, 'runs', 'detect');
-
-
-
 
         const existingExpFolders = fs.readdirSync(detectDir).filter(folder => folder.startsWith('predict'));
         const highestExp = existingExpFolders.reduce((max, folder) => {
@@ -354,65 +354,209 @@ function filterGeoJSONByClass(geoJSON, classNames) {
     };
 }
 
+app.get('/folder', (req, res) => {
+    const folderId = req.query.userId;
 
+    const baseFolderPath = path.join(__dirname, 'userData', folderId, 'training');
 
+    const existingFolders = fs.readdirSync(baseFolderPath);
+
+    const annotationFolders = existingFolders.filter(folder => /^annotations\d+$/.test(folder));
+
+    let latestFolderNumber = 0;
+    if (annotationFolders.length > 0) {
+        annotationFolders.forEach(folder => {
+            const match = folder.match(/^annotations(\d+)$/);
+            if (match) {
+                const folderNumber = parseInt(match[1], 10);
+                if (folderNumber > latestFolderNumber) {
+                    latestFolderNumber = folderNumber;
+                }
+            }
+        });
+    }
+
+    const newFolderNumber = latestFolderNumber + 1;
+    const newFolderPath = path.join(baseFolderPath, `annotations${newFolderNumber}`);
+    fs.mkdirSync(newFolderPath);
+
+    const subfolders = ['train/images', 'train/labels', 'test/images', 'test/labels', 'valid/images', 'valid/labels'];
+    subfolders.forEach(subfolder => {
+        const subfolderPath = path.join(newFolderPath, subfolder);
+        fs.mkdirSync(subfolderPath, { recursive: true });
+    });
+
+    res.json({ newFolderPath: newFolderPath });
+});
 
 
 app.post('/upload', (req, res) => {
     const data = req.body; // Access JSON data from the request body
     let userId = req.query.userId;
+    let imageName = req.query.imageName;
+    let type = req.query.type;
 
-    // Process the data as needed
-    const imageBase64 = data.imageBase64;
-    const labelBase64 = data.labelBase64;
-    const imageFileName = `${data.imageFileName}.png`; // Set the image file name with the '.png' extension
-    const labelFileName = `${data.labelFileName}.txt`; // Set the label file name with the '.txt' extension
+    const folderId = req.query.userId;
+    const baseFolderPath = path.join(__dirname, 'userData', folderId, 'training');
+    const existingFolders = fs.readdirSync(baseFolderPath);
+    const annotationFolders = existingFolders.filter(folder => /^annotations\d+$/.test(folder));
 
-    // Function to convert Base64 to a file and save it
-    function base64ToFile(base64Data, filePath) {
-        const base64Image = base64Data.replace(/^data:image\/png;base64,/, ""); // Remove data URI prefix
-        const buffer = Buffer.from(base64Image, 'base64');
-        fs.writeFileSync(filePath, buffer);
+    let latestFolderNumber = 0;
+    if (annotationFolders.length > 0) {
+        annotationFolders.forEach(folder => {
+            const match = folder.match(/^annotations(\d+)$/);
+            if (match) {
+                const folderNumber = parseInt(match[1], 10);
+                if (folderNumber > latestFolderNumber) {
+                    latestFolderNumber = folderNumber;
+                }
+            }
+        });
     }
 
-    // Generate file paths
-    const imageFilePath = userId ? path.join(__dirname, 'userData', `${userId}`, 'training', 'annotations', 'images', imageFileName) : path.join(__dirname, 'annotations', 'images', imageFileName);
-    const labelFilePath = userId ? path.join(__dirname, 'userData', `${userId}`, 'training', 'annotations', 'labels', labelFileName) : path.join(__dirname, 'annotations', 'labels', labelFileName);
+    if (type === 'yaml') {
+        const yamlBase64 = data.yamlBase64;
+        const yamlFileName = `${data.yamlFileName}.yaml`; // Set the YAML file name with the '.yaml' extension
 
-    // Convert Base64 to files and save them
-    base64ToFile(imageBase64, imageFilePath);
-    base64ToFile(labelBase64, labelFilePath);
+        // Function to convert Base64 to a file and save it
+        function base64ToFile(base64Data, filePath) {
+            const buffer = Buffer.from(base64Data, 'base64');
+            fs.writeFileSync(filePath, buffer);
+        }
 
+        // Generate file paths for YAML
+        const yamlFilePath = path.join(baseFolderPath, `annotations${latestFolderNumber}`, yamlFileName);
+
+        // Convert Base64 to file and save it
+        base64ToFile(yamlBase64, yamlFilePath);
+    } else {
+        // Process non-YAML data as before
+        const imageBase64 = data.imageBase64;
+        const labelBase64 = data.labelBase64;
+        const imageFileName = `${data.imageFileName}${imageName}`; // Set the image file name with the '.png' extension
+        const labelFileName = `${data.labelFileName}.txt`; // Set the label file name with the '.txt' extension
+
+        // Function to convert Base64 to a file and save it
+        function base64ToFile(base64Data, filePath) {
+            const buffer = Buffer.from(base64Data, 'base64');
+            fs.writeFileSync(filePath, buffer);
+        }
+
+        // Generate file paths for non-YAML
+        const imageFilePath = path.join(baseFolderPath, `annotations${latestFolderNumber}`, `${type}`, 'images', imageFileName)
+        const labelFilePath = path.join(baseFolderPath, `annotations${latestFolderNumber}`, `${type}`, 'labels', labelFileName)
+
+        // Convert Base64 to files and save them
+        base64ToFile(imageBase64, imageFilePath);
+        base64ToFile(labelBase64, labelFilePath);
+    }
     res.send('Files saved successfully on the server.');
 });
 
 
 app.get('/training-from-scratch', (req, res) => {
-    const train = path.join(__dirname, 'yolov5', 'train.py');
+    // Extract userId and script from query parameters
+    const userId = req.query.userId;
+    const script = req.query.script;
+    const folderId = req.query.userId;
+    const baseFolderPath = path.join(__dirname, 'userData', folderId, 'training');
+    const existingFolders = fs.readdirSync(baseFolderPath);
+    const annotationFolders = existingFolders.filter(folder => /^annotations\d+$/.test(folder));
+
+    let latestFolderNumber = 0;
+    if (annotationFolders.length > 0) {
+        annotationFolders.forEach(folder => {
+            const match = folder.match(/^annotations(\d+)$/);
+            if (match) {
+                const folderNumber = parseInt(match[1], 10);
+                if (folderNumber > latestFolderNumber) {
+                    latestFolderNumber = folderNumber;
+                }
+            }
+        });
+    }
+
+    const yamlFilePath = path.join(baseFolderPath, `annotations${latestFolderNumber}`, 'data.yaml');
+
+    // Decode the script parameter
+    const decodedScript = decodeURIComponent(script);
 
     // Set up SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
 
-    const cmd = `python3 ${train} --data data.yaml --weights '' --cfg yolov5s.yaml --epochs 10`;
+    // Save the current working directory
+    const originalDirectory = process.cwd();
 
-    const childProcess = exec(cmd);
+    // Define the target directory
+    const targetDirectory = path.join(__dirname, 'userData', `${userId}`, 'training');
 
-    childProcess.stderr.on('data', (data) => {
-        // Send stderr data as SSE messages
-        res.write(`data: ${data}\n\n`);
+    // Change the working directory to the target directory
+    process.chdir(targetDirectory);
+
+    // Command to start TensorBoard
+    const tensorboardCmd = `tensorboard --logdir ${path.join(__dirname, 'runs')}`;
+    const tensorboardProcess = exec(tensorboardCmd);
+
+    // Event handlers for TensorBoard process
+    tensorboardProcess.stdout.on('data', (data) => {
+        console.log(`${data}`);
+        res.write(`${data}\n\n`);
+        res.flushHeaders();
     });
 
-    childProcess.on('close', (code) => {
-        // Close the SSE connection when the child process is done
-        res.end(`data: Process exited with code ${code}\n\n`);
+    tensorboardProcess.stderr.on('data', (data) => {
+        console.error(`${data}`);
+        res.write(`${data}\n\n`);
+        res.flushHeaders();
     });
 
-    childProcess.on('error', (error) => {
-        console.error(`Error executing YOLOv5: ${error}`);
-        res.status(500).end(`data: Error performing training Model\n\n`);
+    tensorboardProcess.on('exit', (code) => {
+        console.log(`TensorBoard process exited with code ${code}`);
+        res.write(`data: TensorBoard process exited with code ${code}\n\n`);
+        res.flushHeaders();
     });
+
+    // Error handling for TensorBoard process
+    tensorboardProcess.on('error', (error) => {
+        console.error(`Error executing TensorBoard: ${error}`);
+        res.status(500).end(`data: Error starting TensorBoard\n\n`);
+    });
+
+    // Command to start YOLO training
+    // const yoloCmd = `yolo detect train model='' data=coco128.yaml epochs=1 val=True userId=${userId} script="${decodedScript}"`;
+    const yoloProcess = exec(`${decodedScript} data=${yamlFilePath}`);
+
+    // Event handlers for YOLO process
+    yoloProcess.stdout.on('data', (data) => {
+        console.log(`${data}`);
+        res.write(`${data}\n\n`);
+        res.flushHeaders();
+    });
+
+    yoloProcess.stderr.on('data', (data) => {
+        console.error(`${data}`);
+        res.write(`${data}\n\n`);
+        res.flushHeaders();
+    });
+
+    yoloProcess.on('exit', (code) => {
+        console.log(`YOLO process exited with code ${code}`);
+        res.end(`data: YOLO process exited with code ${code}\n\n`);
+    });
+
+    // Error handling for YOLO process
+    yoloProcess.on('error', (error) => {
+        console.error(`Error executing YOLO: ${error}`);
+        res.status(500).end(`data: Error performing YOLO training\n\n`);
+    });
+
+    // Revert to the original working directory after the processes are done
+    process.chdir(originalDirectory);
+
 });
+
+
 
 
 app.get('/training-from-pretrained', (req, res) => {
