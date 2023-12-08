@@ -10,6 +10,9 @@
 *.pt
 .env
 
+/dependencies
+/mapobj
+
 # testing
 /coverage
 
