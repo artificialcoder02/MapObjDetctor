@@ -9,12 +9,19 @@
 .pnp.js
 *.pt
 .env
+*.yaml
+*.csv
+*.cache
+*.tfevents
 
 /dependencies
 /mapobj
 
 # testing
 /coverage
+/server/runs/detect/
+/server/UserData
+/server/datasets
 
 # production
 /build

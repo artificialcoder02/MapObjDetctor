@@ -1,18 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>YOLOv8 - Training from Scratch</title>
-        <!-- Include Bootstrap CSS and JavaScript via CDN -->
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-            rel="stylesheet">
-        <!-- Include Prism.js CSS for syntax highlighting -->
-        <link rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/themes/prism.min.css">
-        <style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv8 - Training from Scratch</title>
+    <!-- Include Bootstrap CSS and JavaScript via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Include Prism.js CSS for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.27.0/themes/prism.min.css">
+    <style>
         body {
             background-color: #f8f9fa;
             color: #495057;
@@ -103,94 +100,83 @@
                 opacity: 1;
             }
         }
+
         .info-box {
             margin-left: 5px;
             cursor: pointer;
             color: #007bff;
-}
-
+        }
     </style>
-    </head>
+</head>
 
-    <body>
-        <div class="container">
-            <h1>YOLOv8 - Training from Scratch</h1>
-            <form id="trainingForm">
-                <!-- Basic Training Fields -->
-                <label for="epochs - Enter the number of epochs">Epochs:</label>
-                <input type="number" id="epochs" name="epochs - Enter the number of epochs" required>
+<body>
+    <div class="container">
+        <h1>YOLOv8 - Training from Scratch</h1>
+        <form id="trainingForm">
+            <!-- Basic Training Fields -->
+            <label for="Enter the your name">Name:</label>
+            <input type="text" id="name" name="name" required>
 
-                <!-- Enable Advanced Training Button -->
-                <button type="button" onclick="toggleAdvancedTraining()"
-                    class="btn btn-primary">Enable Advanced
-                    Training</button>
+            <label for="epochs - Enter the number of epochs">Epochs:</label>
+            <input type="number" id="epochs" name="epochs" required>
 
-                <!-- Advanced Training Section -->
-                <div id="advancedTrainingSection">
-                    <h2>Advanced Training</h2>
+            <!-- Enable Advanced Training Button -->
+            <button type="button" onclick="toggleAdvancedTraining()" class="btn btn-primary">Enable Advanced
+                Training</button>
 
-                    <!-- Hyperparameter Set -->
-                    <div class="hyperparameter-set">
+            <!-- Advanced Training Section -->
+            <div id="advancedTrainingSection">
+                <h2>Advanced Training</h2>
+                <div style="display: flex; flex-direction: column;">
+                    <!-- Hyperparameter Dropdown -->
+                    <label for="hyperparameterDropdown">Select
+                        Hyperparameters for advanced model training:</label>
+                    <select id="hyperparameterDropdown">
+                        <option value="patience">
+                            patience: Epochs to wait for no observable improvement for early stopping of training
+                        </option>
+                        <option value="batch">batch: Number of images
+                            per batch (-1 for AutoBatch)</option>
+                        <option value="imgsz">imgsz - size of input images as integer
+                        </option>
+                        <option value="optimizer">
+                            Optimizer: Choose the optimizer to use, choices=[SGD, Adam, Adamax, AdamW, NAdam, RAdam,
+                            RMSProp, auto]</option>
+                        <option value="verbose">Verbose: Choose whether to
+                            print verbose output</option>
+                        <option value="seed">Seed: Choose the
+                            value of random seed for reproducibility</option>
+                        <option value="val">Val: Choose to validate/test
+                            during training</option>
+                        <option value="plots">Plots: Choose to save
+                            plots and images during train/val</option>
+                        <!-- Add more hyperparameters as needed -->
+                    </select>
 
-                        <div style="display: flex; flex-direction: column;">
-                            <label for="patience">Patience:</label>
-                            <input type="number" id="patience" name="patience:Epochs to wait for no observable improvement for early stopping of training ">
-                        </div>
+                    <!-- Add Selected Hyperparameters Button -->
+                    <button type="button" onclick="addSelectedHyperparameters()" class="btn btn-secondary">Add Selected
+                        Hyperparameters</button>
+                </div>
 
-                        <div style="display: flex; flex-direction: column;">
-                            <label for="batch">Batch Size:</label>
-                            <input type="number" id="batch" name="batch:Number of images per batch (-1 for AutoBatch)">
-                        </div>
-
-                        <div style="display: flex; flex-direction: column;">
-                            <label for="imgsz">Image Size:</label>
-                            <input type="number" id="imgsz" name="imgsz:size of input images as integer">
-                        </div>
-
-                    </div>
-
-                    <div style="display: flex; flex-direction: column;">
-                        <!-- Hyperparameter Dropdown -->
-                        <label for="hyperparameterDropdown">Select
-                            Hyperparameters for advanced model training:</label>
-                        <select id="hyperparameterDropdown">
-                            <option value="project - Choose your project name">Project - Your project name</option>
-                            <option value="name - Choose your experiment name">Name - Your experiment name</option>
-                            <option value="optimizer - Choose the optimizer to use, choices=[SGD, Adam, Adamax, AdamW, NAdam, RAdam, RMSProp, auto]">Optimizer - Choose the optimizer to use, choices=[SGD, Adam, Adamax, AdamW, NAdam, RAdam, RMSProp, auto]</option>
-                            <option value="verbose - Choose whether to print verbose output ">Verbose - Choose whether to print verbose output</option>
-                            <option value="seed - Choose the value of random seed for reproducibility">Seed - Choose the value of random seed for reproducibility</option>
-                            <option value="val - Choose to validate/test during training" >Val - Choose to validate/test during training</option>
-                            <option value="plots - Choose to save plots and images during train/val">Plots  - Choose to save plots and images during train/val</option>
-                            <!-- Add more hyperparameters as needed -->
-                        </select>
-
-                        <!-- Add Selected Hyperparameters Button -->
-                        <button type="button"
-                            onclick="addSelectedHyperparameters()"
-                            class="btn btn-secondary">Add Selected
-                            Hyperparameters</button>
-                    </div>
-
-                    <!-- Hyperparameter Input Container -->
-                    <div id="hyperparameterInputContainer"
-                        style="    display: flex;
+                <!-- Hyperparameter Input Container -->
+                <div id="hyperparameterInputContainer" style="    display: flex;
                 justify-content: center;
                 flex-direction: column;"></div>
 
-                    <!-- Selected Hyperparameters Display -->
-                    <div id="selectedHyperparameters"></div>
-
-                    <!-- Submit Button -->
-                </form>
-               
-
+                <!-- Selected Hyperparameters Display -->
+                <div id="selectedHyperparameters"></div>
             </div>
-            <a onclick="gatherFormData()" class="btn btn-success">Train
-                Model</a>
-            <!-- Include Bootstrap JavaScript via CDN -->
-            <script
-                src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-            <script>
+
+            <!-- Submit Button -->
+        </form>
+
+        <a onclick="gatherFormData()" class="btn btn-success">Train
+            Model</a>
+    </div>
+
+    <!-- Include Bootstrap JavaScript via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+    <script>
 
         function toggleAdvancedTraining() {
             var advancedTrainingSection = document.getElementById("advancedTrainingSection");
@@ -229,27 +215,120 @@
 
                 // Show input fields for selected hyperparameters if not already added
                 if (!document.getElementById(selectedHyperparameters[i].value + "Input")) {
-                    showHyperparameterInput(selectedHyperparameters[i].value);
+                    // Pass the option text as the second argument to showHyperparameterInput
+                    showHyperparameterInput(selectedHyperparameters[i].value, selectedHyperparameters[i].text);
                 }
             }
         }
 
         function showHyperparameterInput(hyperparameterName, info) {
-    var inputContainer = document.getElementById("hyperparameterInputContainer");
+            var inputContainer = document.getElementById("hyperparameterInputContainer");
 
-    // Create input field for the hyperparameter
-    var inputField = document.createElement("input");
-    inputField.type = "text";
-    inputField.id = hyperparameterName + "Input";
-    inputField.placeholder = "Enter value for " + hyperparameterName;
+            // Remove any existing input field with the same ID
+            var existingInput = document.getElementById(hyperparameterName + "Input");
+            if (existingInput) {
+                existingInput.remove();
+            }
 
-    inputContainer.appendChild(inputField);
-}
+            // Create a container div to hold both the label, input, and remove button
+            var containerDiv = document.createElement("div");
+            containerDiv.style.display = "flex";
+            containerDiv.style.flexDirection = "column";
 
+            // Create label for the hyperparameter
+            var label = document.createElement("label");
+            label.for = hyperparameterName + "Input";
+            label.textContent = info.trim(); // Trim any leading/trailing whitespaces
+
+            // Append label to the container div
+            containerDiv.appendChild(label);
+
+            // Create input field for the hyperparameter based on its type
+            var inputField;
+
+            switch (hyperparameterName) {
+                // ... (same as before)
+                case "epochs":
+                case "batch":
+                case "imgsz":
+                case "patience":
+                case "seed":
+                    inputField = document.createElement("input");
+                    inputField.type = "number";
+                    break;
+
+                case "name":
+                    inputField = document.createElement("input");
+                    inputField.type = "text";
+                    break;
+
+                case "val":
+                case "verbose":
+                case "plots":
+                    inputField = document.createElement("select");
+                    var options = ["True", "False"];
+                    for (var i = 0; i < options.length; i++) {
+                        var option = document.createElement("option");
+                        option.value = options[i];
+                        option.text = options[i];
+                        inputField.add(option);
+                    }
+                    break;
+
+                case "optimizer":
+                    inputField = document.createElement("select");
+                    var optimizerOptions = ["SGD", "Adam", "Adamax", "AdamW", "NAdam", "RAdam", "RMSProp", "auto"];
+                    for (var i = 0; i < optimizerOptions.length; i++) {
+                        var option = document.createElement("option");
+                        option.value = optimizerOptions[i];
+                        option.text = optimizerOptions[i];
+                        inputField.add(option);
+                    }
+                    break;
+
+                default:
+                    inputField = document.createElement("text");
+                    break;
+            }
+
+            inputField.id = hyperparameterName + "Input";
+            inputField.placeholder = "Enter value for " + hyperparameterName;
+
+            // Append input field to the container div
+            containerDiv.appendChild(inputField);
+
+            // Create a button for removing the field
+            var removeButton = document.createElement("button");
+            removeButton.textContent = "Remove";
+            removeButton.type = "button";
+            removeButton.style.width = '20%';
+            removeButton.onclick = function () {
+                removeHyperparameterInput(hyperparameterName);
+            };
+
+            // Append the remove button to the container div
+            containerDiv.appendChild(removeButton);
+
+            // Append the container div to the hyperparameter input container
+            inputContainer.appendChild(containerDiv);
+        }
+
+        function removeHyperparameterInput(hyperparameterName) {
+            var inputToRemove = document.getElementById(hyperparameterName + "Input");
+            if (inputToRemove) {
+                inputToRemove.parentElement.remove(); // Remove the entire container div
+            }
+        }
 
         function gatherFormData() {
             var form = document.getElementById("trainingForm");
             var formData = new FormData(form);
+
+            // Include data from hyperparameterInputContainer
+            var hyperparameterInputs = document.getElementById("hyperparameterInputContainer").querySelectorAll("input, select");
+            hyperparameterInputs.forEach(function (input) {
+                formData.append(input.id.replace("Input", ""), input.value);
+            });
 
             // Convert FormData to a plain object
             var formObject = {};
@@ -257,25 +336,51 @@
                 formObject[key] = value;
             });
 
-            // Include data from hyperparameterInputContainer
-            var hyperparameterInputs = document.getElementById("hyperparameterInputContainer").getElementsByTagName("input");
-            for (var i = 0; i < hyperparameterInputs.length; i++) {
-                formObject[hyperparameterInputs[i].id.replace("Input", "")] = hyperparameterInputs[i].value;
+            // Create the script string
+            var script = "yolo detect train";
+
+            // Add parameters with non-empty values to the script
+            for (var key in formObject) {
+                if (formObject[key] !== "") {
+                    script += ` ${key}=${formObject[key]}`;
+                }
             }
 
-            // Now 'formObject' contains all input data
-            console.log(formObject);
+            // Log the script string
+            console.log(script);
+            const jsonDataString = JSON.parse(localStorage.getItem('user'));
 
-            // You can do further processing or send this data to a server
+            // Encode the script for the URL
+            var encodedScript = encodeURIComponent(script);
+            // Check if "Name" and "Epochs" fields are not empty
+            var nameValue = document.getElementById("name").value;
+            var epochsValue = document.getElementById("epochs").value;
+
+            if (!nameValue || !epochsValue) {
+                alert("Name and Epochs are required fields.");
+                return;
+            }
+            // Redirect to "/training-loger" with the encoded script as a query parameter
+            window.location.href = `/training-loger?script=${encodedScript}&userId=${jsonDataString ? jsonDataString.user._id : ''}`;
         }
 
+
     </script>
-        </body>
+</body>
 
-    </html>
+</html>
 
-    <!-- IN SCRATCH MODEL = yolov8n.pt
+<!-- IN SCRATCH MODEL = yolov8n.pt
     IN pretrained model = dynamic
 
-    yolo detect train --model PATH --data DEFault Path --epochs NUMBER --project "" --name "" --batch NUMBER --imgsz NUMBER --optimizer [check values] --seed NUMBER --val TRUE/FALSE --plots TRUE/FALSE -->
-
+     yolo detect train --model PATH --data DEFault Path 
+    --epochs 
+    --project
+    --name
+    --batch 
+    --imgsz
+    --seed 
+    --val 
+    --plots 
+    --optimizer 
+-->
