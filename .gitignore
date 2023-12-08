@@ -9,6 +9,7 @@
 /.pnp
 .pnp.js
 *.pt
+dependencies/
 
 # testing
 /coverage

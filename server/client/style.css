@@ -74,7 +74,7 @@ body {
   display: flex;
   border: #242526 10px solid;
   /* border-radius: 20px; */
-  height: 92%;
+  height: 100%;
   width: 100%;
   z-index: 1;
 }
