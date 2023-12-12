@@ -29,32 +29,47 @@ app.use(cookieParser());
 
 app.use('/api/v0.1/', userRouter);
 
+Set 
+
 // Directory where image files are stored
 const imageFolder = path.join(__dirname, 'image');
+// Check if the directory exists
+if (!fs.existsSync(imageFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(imageFolder);
+}
 
 // Get a list of image files in the folder
 const imageFiles = fs.readdirSync(imageFolder).filter(file => file.endsWith('.png'));
 
-// Sort the list of image files by creation time (most recent first)
-imageFiles.sort((fileA, fileB) => {
-    return fs.statSync(path.join(imageFolder, fileB)).ctime.getTime() - fs.statSync(path.join(imageFolder, fileA)).ctime.getTime();
-});
-
-// Check if there are any image files in the folder
-if (imageFiles.length === 0) {
-    console.error('No image files found in the folder.');
-    return res.status(500).json({ error: 'No image files found' });
+// Directory where model files are stored
+const modelFolder = path.join(__dirname, 'model');
+// Check if the directory exists
+if (!fs.existsSync(modelFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(modelFolder);
 }
 
-// Choose the most recent image file
-const mostRecentImage = path.join(imageFolder, imageFiles[0]);
+// // Sort the list of image files by creation time (most recent first)
+// imageFiles.sort((fileA, fileB) => {
+//     return fs.statSync(path.join(imageFolder, fileB)).ctime.getTime() - fs.statSync(path.join(imageFolder, fileA)).ctime.getTime();
+// });
 
-// Get the image dimensions synchronously
-const dimensions = sizeOf(mostRecentImage);
+// // Check if there are any image files in the folder
+// if (imageFiles.length === 0) {
+//     console.error('No image files found in the folder.');
+//     return res.status(500).json({ error: 'No image files found' });
+// }
 
-// Extract the width and height
-const imageWidth = dimensions.width;
-const imageHeight = dimensions.height;
+// // Choose the most recent image file
+// const mostRecentImage = path.join(imageFolder, imageFiles[0]);
+
+// // Get the image dimensions synchronously
+// const dimensions = sizeOf(mostRecentImage);
+
+// // Extract the width and height
+// const imageWidth = dimensions.width;
+// const imageHeight = dimensions.height;
 
 
 // Serve the HTML file for the root URL
@@ -222,6 +237,26 @@ app.post('/save-captured-image', (req, res) => {
             }
         });
 
+        
+        //Enable this block of code to save the object detection output for debugging
+        // exec(`yolo detect predict model='${modelPath}' source='${imagePath}'`, (error, stdout, stderr) => {
+        //     if (error) {
+        //         return console.log({ error: 'Error performing object detection' });
+        //     }
+        //     console.log(stderr);
+
+        //     const processedImageData = fs.readFileSync(imagePer, 'base64');
+        //     // Send the processed image as base64 in the response
+        //     // return res.json({ processedImage: processedImageData });
+
+        //     // If you changed the directory, you might want to change it back to the original directory
+        //     if (fs.existsSync(userPath)) {
+        //         process.chdir(__dirname);
+        //         // console.log(`Changed working directory back to: ${__dirname}`);
+        //     }
+        // });
+
+
         imageProcess.on('exit', (code) => {
             console.log(`Tensorboard process exited with code ${code}`);
         });
@@ -237,7 +272,7 @@ app.post('/save-captured-image', (req, res) => {
                 return res.status(500).json({ error: 'Error constructing tif file' });
             }
             console.log(stdout);
-            // Instead of reading the processed image from a file, you can directly convert it to base64
+            console.log("Geotiff was created successfully!")
         });
 
 
@@ -254,13 +289,15 @@ app.post('/save-captured-image', (req, res) => {
             console.log(stdout);
             // Read the directory
             fs.readdir(directoryPath, (err, files) => {
+                
                 if (err) {
                     console.error('Error reading directory:', err);
                     return res.status(500).json({ error: 'Error reading directory' });
                 } else {
                     // Filter the files with the pattern "output_<number>.geojson"
                     const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
-
+                    
+               
                     // Sort the files by the creation time
                     geojsonFiles.sort((fileA, fileB) => {
                         return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
@@ -271,15 +308,18 @@ app.post('/save-captured-image', (req, res) => {
 
                     // Read the file and load the data into a variable
                     fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
+                        console.log(err);
+                        
                         if (err) {
                             console.error('Error reading file:', err);
-                            return res.status(500).json({ error: 'Error reading file' });
+                            return;
                         } else {
                             try {
                                 const jsonData = JSON.parse(data); // assuming the file contains JSON data
-                                // Use the jsonData variable as required
+                                // Use the jsonData variable as required/
+                                // console.log(jsonData);
                                 console.log('Loaded data:', jsonData);
-                                return res.json({ geojson: jsonData });
+                                return res.status(200).json({ geojson: jsonData });
                             } catch (error) {
                                 console.error('Error parsing JSON data:', error);
                                 return res.status(500).json({ error: 'Error parsing JSON data' });

@@ -9,7 +9,9 @@ import random
 
 os.environ["PROJ_LIB"] = r"C:\ProgramData\anaconda3\pkgs\proj-6.2.1-h3758d61_0\Library\share\proj"
 
+
 def pixel_to_latlng(pixel_x, pixel_y, src, lat_offset= -0.00001, lng_offset=0.00001):
+
     # Get the transform from pixel coordinates to geographic coordinates
     transform = src.transform
 

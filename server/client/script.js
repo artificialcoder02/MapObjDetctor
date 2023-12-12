@@ -251,9 +251,10 @@ var map = L.map('map', {
     downloadable: true,
 }).setView(centerPoint, 18);
 
-// Add OSM layer.
+
 // Create and add the tile layer
 const tileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    crs: L.CRS.EPSG4326,
     maxZoom: 20,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
 }).addTo(map);
@@ -505,6 +506,8 @@ function downloadMap() {
                 // Handle the received data
                 console.log(data.geojson);
                 var myLayer = L.geoJSON(data.geojson, {
+                    crs: L.CRS.EPSG4326,
+                    //crs:L.CRS.EPSG3857,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
@@ -515,6 +518,8 @@ function downloadMap() {
                 }).addTo(map);
 
                 var myLayer = L.geoJSON(data.geojson, {
+                    crs: L.CRS.EPSG4326,
+                    //crs:L.CRS.EPSG3857,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
@@ -685,6 +690,8 @@ async function fetchRecentGeoJSONAll() {
 
                 // Add new data to the map
                 const newLayer = L.geoJSON(data, {
+                    crs: L.CRS.EPSG4326,
+                    //crs:L.CRS.EPSG3857,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
@@ -731,6 +738,8 @@ async function updateGeoJSONLayer(className) {
 
                 // Add new data
                 const newLayer = L.geoJSON(data.geojson, {
+                    crs: L.CRS.EPSG4326,
+                    //crs:L.CRS.EPSG3857,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified

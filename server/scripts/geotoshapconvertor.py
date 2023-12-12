@@ -2,6 +2,7 @@ import argparse
 import os
 import geopandas as gpd
 
+
 def convert_geojson_to_shapefile(geojson_folder, output_folder , folder_name):
     # Get a list of GeoJSON files in the folder
     geojson_files = [f for f in os.listdir(geojson_folder) if f.endswith(".geojson")]
@@ -30,11 +31,13 @@ def convert_geojson_to_shapefile(geojson_folder, output_folder , folder_name):
         gdf.to_file(shapefile_output, driver="ESRI Shapefile")
         print(f"Successfully converted {most_recent_geojson} to {base_name}.shp in the specified output folder.")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert most recent GeoJSON file to Shapefile.")
     parser.add_argument("--geojson_folder", required=True, help="Path to the folder containing GeoJSON files")
     parser.add_argument("--output_folder", required=True, help="Path to the output folder for Shapefiles")
     parser.add_argument("--folder_name", required =True,help="Contains the Name of the Shapefile")
+
 
     args = parser.parse_args()
 

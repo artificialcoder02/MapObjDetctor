@@ -3,11 +3,13 @@
 *.tif
 *.shp
 
+
 # dependencies
 /node_modules
 /.pnp
 .pnp.js
 *.pt
+
 .env
 *.yaml
 *.csv
@@ -18,6 +20,9 @@
 \mapobj
 \newmap
 
+dependencies/
+
+
 # testing
 /coverage
 /server/runs/detect/
@@ -27,13 +32,16 @@
 # production
 /build
 
-# misc
-.DS_Store
+# environments
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+mapobj/
 
+# misc
+.DS_Store
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -44,7 +52,6 @@ yarn-error.log*
 /yolov5
 /shaper
 *.zip
-*.txt
 *.jpeg
 *.jpeg
 *.png
