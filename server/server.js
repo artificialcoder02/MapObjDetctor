@@ -8,7 +8,7 @@ const dotenv = require('dotenv').config();
 const sizeOf = require('image-size');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const WebSocket = require('ws');
+const archiver = require('archiver');
 app.use(bodyParser.json({ limit: '10000mb' }));
 const multer = require('multer');
 const connectMongo = require("./config/db/config.js");
@@ -170,6 +170,7 @@ app.post('/save-captured-image', (req, res) => {
     // Specify the path to the "image" folder
     const imagePath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'image', fileName) : path.join(__dirname, 'image', fileName);
 
+
     // Write the base64 data to a PNG file
     fs.writeFile(imagePath, base64Data, 'base64', (err) => {
         if (err) {
@@ -195,6 +196,10 @@ app.post('/save-captured-image', (req, res) => {
         // const modelPath = path.join(__dirname, 'best.pt');
         const userPath = path.join(__dirname, 'userData', `${userId}`);
 
+        const scriptNew = `yolo detect predict model=${modelPath} source=${imagePath}`;
+
+        console.log(scriptNew);
+
         if (userId) {
             // Check if user directory exists
             if (fs.existsSync(userPath)) {
@@ -203,16 +208,13 @@ app.post('/save-captured-image', (req, res) => {
             }
         }
 
-        exec(`yolo detect predict model='${modelPath}' source='${imagePath}'`, (error, stdout, stderr) => {
+        const imageProcess = exec(scriptNew, (error, stdout, stderr) => {
             if (error) {
-                return console.log({ error: 'Error performing object detection' });
+                console.error(`Error: ${error.message}`);
+                return;
             }
-            console.log(stderr);
-
-            const processedImageData = fs.readFileSync(imagePer, 'base64');
-            // Send the processed image as base64 in the response
-            // return res.json({ processedImage: processedImageData });
-
+            console.log(`stdout: ${stdout}`);
+            console.error(`stderr: ${stderr}`);
             // If you changed the directory, you might want to change it back to the original directory
             if (fs.existsSync(userPath)) {
                 process.chdir(__dirname);
@@ -220,6 +222,9 @@ app.post('/save-captured-image', (req, res) => {
             }
         });
 
+        imageProcess.on('exit', (code) => {
+            console.log(`Tensorboard process exited with code ${code}`);
+        });
 
         const geoTiffFileName = `${path.basename(imagePath, path.extname(imagePath))}.tif`; // Construct the GeoTIFF file name
 
@@ -325,18 +330,53 @@ app.get('/get-recent-geojson', (req, res) => {
 
 
 app.post('/generate-shapefile', (req, res) => {
+    const userId = req.query.userId;
+
+    const geojsonFolderPath = path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj');
+    const outputFolderPath = path.join(__dirname, 'userData', `${userId}`, 'detection', 'shaper');
+    
+    // Function to find the most recent 'shaper' folder
+    const findMostRecentShaperFolder = () => {
+        const shaperFolders = fs.readdirSync(outputFolderPath)
+            .filter(folder => folder.startsWith('shaper'))
+            .map(folder => parseInt(folder.replace('shaper', ''), 10))
+            .filter(folderNum => !isNaN(folderNum))
+            .sort((a, b) => b - a);
+
+        return shaperFolders.length > 0 ? shaperFolders[0] : 0;
+    };
+
+    const mostRecentShaperFolder = findMostRecentShaperFolder();
+    const newShaperFolder = `shaper${mostRecentShaperFolder + 1}`;
+
+
+    const newShaperFolderPath = path.join(outputFolderPath, newShaperFolder);
+
+    // Create the new 'shaper' folder if it doesn't exist
+    if (!fs.existsSync(newShaperFolderPath)) {
+        fs.mkdirSync(newShaperFolderPath);
+    }
+
     // Execute your Python script here to generate the shapefile.
     const modelPathNew = path.join(__dirname, 'scripts', 'geotoshapconvertor.py');
 
-    exec(`python ${modelPathNew}`, (error, stdout, stderr) => {
-
+    exec(`python ${modelPathNew} --geojson_folder ${geojsonFolderPath} --output_folder ${outputFolderPath} --folder_name ${newShaperFolder}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing Python script: ${stderr}`);
             res.status(500).json({ error: 'Error generating shapefile' });
         } else {
             console.log(stdout);
-            // Respond to the client indicating success.
-            res.sendStatus(200);
+
+            // Create a zip file from the 'shaper' folder
+            const archive = archiver('zip');
+            res.attachment(`${newShaperFolder}.zip`);
+            archive.pipe(res);
+
+            archive.directory(newShaperFolderPath, false);
+            archive.finalize();
+
+            // Clean up: Remove the generated 'shaper' folder
+            // fs.rmdirSync(newShaperFolderPath, { recursive: true });
         }
     });
 });
@@ -596,8 +636,6 @@ app.get('/training-from-scratch', (req, res) => {
     process.chdir(originalDirectory);
 
 });
-
-
 
 
 app.get('/training-from-pretrained', (req, res) => {

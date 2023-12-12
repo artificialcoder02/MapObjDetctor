@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="../vendor/leaflet.editable.measure/leaflet_measure.css" />
     <link rel="stylesheet" href="../vendor/leaflet_1_0_0_rc2/leaflet.css" />
-    <script src="../vendor/leaflet_1_0_0_rc2/leaflet-src.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="../vendor/Leaflet.Editable.js"></script>
     <script src="../vendor/html2canvas/html2canvas.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -116,7 +116,7 @@
 
     <nav>
         <div class="wrapper">
-            <div class="logo"><a href="#">Logo</a></div>
+            <div class="logo"><a href="#">AkashChitran</a></div>
             <input type="radio" name="slider" id="menu-btn">
             <input type="radio" name="slider" id="close-btn">
             <ul class="nav-links" id="menubar">
@@ -138,12 +138,12 @@
                                 <header>User Model</header>
                                 <ul id="userList" class="mega-links" style="padding-inline-start: 0;"></ul>
                             </div>
-                            <!-- <div class="row">
+                            <div class="row">
                                 <header>Other</header>
                                 <ul class="mega-links" style="padding-inline-start: 0;">
-                                    <li><a href="#">Site Seal</a></li>
+                                    <li><a href="#" onclick="downloadShapefile()">Download Shapefile</a></li>
                                 </ul>
-                            </div> -->
+                            </div>
                         </div>
                     </div>
                 </li>
@@ -246,7 +246,7 @@
                 <span class="close" onclick="closePopup()">&times;</span>
                 <div style="display: flex; align-items: center; justify-content: center;">
                     <div id="testImage">
-                        <h3>Upload Images and Labels for Test</h3>
+                        <h3>Upload Images and Labels for Test Folder</h3>
                         <div class="center_input">
                             <div class="input-wrapper">
                                 <label for="imageUploadTest" id="imageLabelTest" class="file-label">Select Images (PNG
@@ -267,7 +267,7 @@
                     </div>
 
                     <div id="tainImage">
-                        <h3>Upload Images and Labels for Train</h3>
+                        <h3>Upload Images and Labels for Train Folder</h3>
                         <div class="center_input">
                             <div class="input-wrapper">
                                 <label for="imageUploadTrain" id="imageLabelTrain" class="file-label">Select Images (PNG
@@ -288,7 +288,7 @@
                     </div>
 
                     <div id="valImage">
-                        <h3>Upload Images and Labels for Valid</h3>
+                        <h3>Upload Images and Labels for Val Folder</h3>
                         <div class="center_input">
                             <div class="input-wrapper">
                                 <label for="imageUploadVal" id="imageLabelVal" class="file-label">Select Images (PNG
@@ -309,7 +309,7 @@
                     </div>
 
                     <div id="xmlImage">
-                        <h3>Upload YAML file for Training</h3>
+                        <h3>Upload data.YAML file for Training</h3>
                         <div class="center_input">
                             <div class="input-wrapper">
                                 <label for="yamlUploadfiles" id="labelyaml" class="file-label">Select YML file (YAML

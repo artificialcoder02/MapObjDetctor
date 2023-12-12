@@ -248,9 +248,11 @@ var map = L.map('map', {
 // Create and add the tile layer
 const tileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
     maxZoom: 20,
-    crossOrigin: true,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
 }).addTo(map);
+
+// const tileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png',{ zIndex: -1,
+// maxZoom:19 }).addTo(map);
 
 
 
@@ -785,7 +787,7 @@ function updateIconContentOnPage(detectedClasses, detectedColor, number, totalCl
             const lastIconHTML = `
                 <div class="icon" onmouseover="showLabel('label2')" onmouseout="hideLabel('label2')">
                     <a href="#" onclick="toggleLayerVisibilityAll()"><i class="hoverss"> <p>${totalClass}</p></i></a>
-                    <div class="label" id="label${i}"><p>Toggle all</p></div>
+                    <div class="label" id="label${i}"><p>Show All</p></div>
                 </div>
             `;
 
@@ -1372,8 +1374,9 @@ function fileToBase64(file) {
 
 
 function downloadShapefile() {
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
     // Send an HTTP request to the server to generate the shapefile.
-    fetch('/generate-shapefile', {
+    fetch(`/generate-shapefile?userId=${jsonDataString ? jsonDataString.user._id : ''}`, {
         method: 'POST',
     })
         .then(response => {
