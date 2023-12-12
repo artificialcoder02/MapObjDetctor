@@ -9,10 +9,25 @@
 /.pnp
 .pnp.js
 *.pt
+
+.env
+*.yaml
+*.csv
+*.cache
+*.tfevents
+
+\dependencies
+\mapobj
+\newmap
+
 dependencies/
+
 
 # testing
 /coverage
+/server/runs/detect/
+/server/UserData
+/server/datasets
 
 # production
 /build
