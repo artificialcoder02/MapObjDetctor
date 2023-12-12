@@ -140,7 +140,7 @@ function handleClick(url) {
         urlTest = url;
         downloadMap();
     }
-    // Add your logic here to use the URL as needed
+    
 }
 
 // Function to check login status and update local storage every 3 seconds
@@ -219,7 +219,14 @@ async function logout() {
     }
 }
 
-
+document.addEventListener('DOMContentLoaded', function() {
+    var instructionButton = document.querySelector('.instruction-button');
+    var instructionTooltip = document.querySelector('.instruction-tooltip');
+  
+    instructionButton.addEventListener('click', function() {
+      instructionTooltip.classList.toggle('active');
+    });
+  });
 
 
 var centerPoint = [22.589659435441984, 88.41788365584796]; // Indian coordinates
