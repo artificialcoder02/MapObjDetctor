@@ -1,30 +1,55 @@
-const jwt = require('jsonwebtoken');
+                const jwt = require('jsonwebtoken');
 const User = require('../config/models/user');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
 
+// const sendEmail = async (to, subject, htmlContent) => {
+//     const transporter = nodemailer.createTransport({
+//         service: 'gmail',
+//         auth: {
+//             user: process.env.EMAIL_USERNAME,
+//             pass: process.env.EMAIL_PASSWORD,
+//         },
+//         port: 587, // Add the port you want to use, typically 587 or 465 for TLS/SSL
+//         secure: false, // Set to true if using port 465 (SSL)
+//     });
+
+//     const mailOptions = {
+//         from: process.env.EMAIL_USERNAME,
+//         to,
+//         subject,
+//         html: htmlContent,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+// };
+
 const sendEmail = async (to, subject, htmlContent) => {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
+    // Hard-coded SMTP settings
+    const smtpConfig = {
+        host: 'smtp.gmail.com', // Replace with your SMTP server's host
+        port: 587,               // Commonly 587 for TLS or 465 for SSL
+        secure: false,           // True for 465 (SSL), false for other ports
         auth: {
-            user: process.env.EMAIL_USERNAME,
-            pass: process.env.EMAIL_PASSWORD,
+            user:  process.env.EMAIL_USERNAME, // Replace with your SMTP username
+            pass: process.env.EMAIL_PASSWORD,            // Replace with your SMTP password
         },
-        port: 587, // Add the port you want to use, typically 587 or 465 for TLS/SSL
-        secure: false, // Set to true if using port 465 (SSL)
-    });
+    };
+
+    const transporter = nodemailer.createTransport(smtpConfig);
 
     const mailOptions = {
-        from: process.env.EMAIL_USERNAME,
-        to,
-        subject,
+        from: smtpConfig.auth.user,
+        to: to,
+        subject: subject,
         html: htmlContent,
     };
 
     await transporter.sendMail(mailOptions);
 };
+
 
 const UserController = {
     register: async (req, res) => {

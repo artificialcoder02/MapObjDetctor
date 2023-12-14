@@ -10,7 +10,8 @@ const training = document.getElementById('training');
 training.style.display = "none";
 userLoginDivBtntwo.style.display = 'none';
 document.getElementById('training_btn').style.display = 'none';
-// document.getElementById('training_btns').style.display = 'none';
+document.getElementById('userShape').style.display ='none';
+document.getElementById('userModel').style.display = 'none';
 
 document.getElementById('tainImage').style.display = 'none';
 document.getElementById('valImage').style.display = 'none';
@@ -157,6 +158,8 @@ const checkAndUpdateLoginStatus = async () => {
         localStorage.removeItem('user');
     } else {
         fetchData(loginStatus.user._id);
+        document.getElementById('userShape').style.display ='block';
+        document.getElementById('userModel').style.display = 'block';
 
         // Get references to the userName and userImage elements
         const userNameElement = document.getElementById('userNames');

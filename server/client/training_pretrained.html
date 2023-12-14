@@ -448,10 +448,11 @@
             // Get the selected model value from the <select> element
             var selectedModel = document.getElementById("models").value;
             if (selectedModel.includes("userData")) {
-                script = `yolo detect train model=${selectedModel + '/weights/best.pt'}`;
+                script = `yolo detect train model=${selectedModel + '/weights/last.pt'} resume=true`;
             } else {
-                script = `yolo detect train model=${selectedModel}`;
+                script = `yolo detect train model=${selectedModel} resume=true`;
             }
+            console.log(formObject);
 
 
             // Append the selected model value to the script string
@@ -482,7 +483,7 @@
             // Encode the script for the URL
             var encodedScript = encodeURIComponent(script);
             // Redirect to "/training-loger" with the encoded script as a query parameter
-            window.location.href = `/training-loger?script=${encodedScript}&userId=${jsonDataString ? jsonDataString.user._id : ''}`;
+            window.location.href = `/training-loger?userId=${jsonDataString ? jsonDataString.user._id : ''}&script=${encodedScript}%20`;
         }
 
 
