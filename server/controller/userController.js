@@ -234,10 +234,12 @@ const UserController = {
             const baseDir = path.join(__dirname, '..', 'userData', `${user._id}`);
             const detectionDir = path.join(baseDir, 'detection');
             const trainingDir = path.join(baseDir, 'training');
+
             const runDir = path.join(baseDir, 'runs');
 
             const detectionSubDirs = ['shaper', 'geot', 'geoj', 'image'];
             const trainingSubDirs = ['annotations1', 'model', 'data'];
+            
             const runSubDirs = ['detect'];
 
             // Create directories and subdirectories

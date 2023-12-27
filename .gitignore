@@ -2,7 +2,7 @@
 *.geojson
 *.tif
 *.shp
-
+ne.html
 
 # dependencies
 /node_modules
