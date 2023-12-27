@@ -28,4 +28,7 @@ router.get('/verify/:verificationToken', UserController.verifyUser);
 // Check Login Status Route
 router.get('/check-login-status', UserController.checkLoginStatus);
 
+// Check Folder Status Route
+router.get('/check-folder', UserController.checkFolder);
+
 module.exports = router;

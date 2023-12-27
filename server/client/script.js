@@ -10,12 +10,16 @@ const training = document.getElementById('training');
 training.style.display = "none";
 userLoginDivBtntwo.style.display = 'none';
 document.getElementById('training_btn').style.display = 'none';
-document.getElementById('userShape').style.display ='none';
+document.getElementById('userShape').style.display = 'none';
 document.getElementById('userModel').style.display = 'none';
-
 document.getElementById('tainImage').style.display = 'none';
 document.getElementById('valImage').style.display = 'none';
 document.getElementById('xmlImage').style.display = 'none';
+document.getElementById('newPopupUserModel').style.display = 'none';
+document.getElementById('nononon').style.width = '20%';
+
+
+// newPopupUserModel
 
 let menubars = document.getElementById("menubar");
 let loadingSpinner = document.getElementById("loadingSpinner");
@@ -58,6 +62,8 @@ const checkLoginStatus = async () => {
 
         const user = await response.json();
         if (user?.isLoggedIn === true) {
+            document.getElementById('newPopupUserModel').style.display = 'block';
+            document.getElementById('nononon').style.width = '55%';
             return { isLoggedIn: true, user };
         }
 
@@ -74,6 +80,21 @@ async function fetchData() {
     const resp = await response.json();
 
     if (!resp.error) {
+        // Set the JSON response in session storage
+        sessionStorage.setItem('modelResponseData', JSON.stringify(resp));
+
+        // Clear existing content in the lists
+        clearModelList('userModelListPopup');
+        clearModelList('defaultModelListPopup');
+
+        // Retrieve the data from session storage
+        const storedDataNE = sessionStorage.getItem('modelResponseData');
+        const dataNew = JSON.parse(storedDataNE);
+
+        // Populate lists for the popup
+        createModelListItems(dataNew.userFiles, 'userModelListPopup');
+        createModelListItems(dataNew.defaultFiles, 'defaultModelListPopup');
+
         // Set the JSON response in session storage
         sessionStorage.setItem('responseData', JSON.stringify(resp));
 
@@ -122,6 +143,49 @@ async function fetchData() {
         }
     }
 }
+function createModelListItems(files, listId) {
+    const list = document.getElementById(listId);
+
+    if (files?.length === 0) {
+        const listItem = document.createElement('li');
+        listItem.textContent = 'No models available';
+        listItem.className = 'model-list-item'; // Apply CSS class
+        applyStylesToListItem(listItem); // Apply CSS styles
+        list.appendChild(listItem);
+        return;
+    }
+
+    const items = files?.map(file => {
+        const listItem = document.createElement('li');
+        applyStylesToListItem(listItem); // Apply CSS styles to li
+        listItem.className = 'model-list-item'; // Apply CSS class
+
+        const anchor = document.createElement('a');
+        anchor.href = '#';
+        anchor.textContent = file.filename;
+        anchor.style.color = 'black'
+        anchor.style.textDecoration = 'none'; // Remove text decoration
+        anchor.onclick = () => handleModelClick(listId === 'userModelListPopup' ? file.path + '/weights/best.pt' : file.path);
+
+        listItem.appendChild(anchor);
+        return listItem;
+    });
+
+    list.append(...items);
+}
+
+function applyStylesToListItem(listItem) {
+    listItem.style.listStyleType = 'none'; // Set list style type to none
+    listItem.style.margin = '5px'; // Example: Set margin
+    listItem.style.padding = '3px'; // Example: Set padding
+}
+
+function clearModelList(listId) {
+    const list = document.getElementById(listId);
+    while (list.firstChild) {
+        list.removeChild(list.firstChild);
+    }
+}
 
 // Function to clear list content
 function clearList(listId) {
@@ -141,7 +205,7 @@ function handleClick(url) {
         urlTest = url;
         downloadMap();
     }
-    
+
 }
 
 // Function to check login status and update local storage every 3 seconds
@@ -158,7 +222,7 @@ const checkAndUpdateLoginStatus = async () => {
         localStorage.removeItem('user');
     } else {
         fetchData(loginStatus.user._id);
-        document.getElementById('userShape').style.display ='block';
+        document.getElementById('userShape').style.display = 'block';
         document.getElementById('userModel').style.display = 'block';
 
         // Get references to the userName and userImage elements
@@ -222,17 +286,19 @@ async function logout() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     var instructionButton = document.querySelector('.instruction-button');
     var instructionTooltip = document.querySelector('.instruction-tooltip');
-  
-    instructionButton.addEventListener('click', function() {
-      instructionTooltip.classList.toggle('active');
+
+    instructionButton.addEventListener('click', function () {
+        instructionTooltip.classList.toggle('active');
     });
-  });
+});
 
 
 var centerPoint = [22.589659435441984, 88.41788365584796]; // Indian coordinates
+
+//var centerPoint = [51.509865, -0.118092]; // English coordinates
 
 // Global variable to store GeoJSON layers
 const geoJsonLayers = {};
@@ -332,22 +398,6 @@ coordinatesControl.addTo(map);
 // Attach the 'click' event listener to the map
 map.on('click', handleMapClick);
 
-// // Add the 'draw:created' event listener to the map
-// map.on('draw:created', handleDrawCreated);
-
-// // Initialize the Leaflet Draw control
-// const drawControl = new L.Control.Draw({
-//     draw: {
-//         polygon: true,
-//         marker: false,
-//         polyline: true,
-//         rectangle: true,
-//         circle: false,
-//     },
-// });
-
-// // Add the draw control to the map
-// map.addControl(drawControl);
 
 
 function handleMapClick(e) {
@@ -358,92 +408,262 @@ function handleMapClick(e) {
     coordinatesContainer.innerHTML = `Latitude: ${lat.toFixed(6)}<br>Longitude: ${lng.toFixed(6)}`;
 }
 
-// function handleDrawCreated(e) {
-//     const layer = e.layer;
+function handleDrawCreated(e) {
+    const layer = e.layer;
 
-//     // Add the drawn layer to the map
-//     layer.addTo(map);
+    // Add the drawn layer to the map
+    layer.addTo(map);
 
-//     // Calculate the surface area using Leaflet Area plugin
-//     const area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
-//     console.log('Surface Area:', area);
+    // Calculate the surface area using Leaflet Area plugin
+    const area = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+    console.log('Surface Area:', area);
 
-//     // Get the bounds of the drawn layer
-//     const bounds = layer.getBounds();
+    // Get the bounds of the drawn layer
+    const bounds = layer.getBounds();
 
-//     // Define the zoom level to fetch tiles for
-//     const zoom = 19; // Replace with the desired zoom level
+    // Define the zoom level to fetch tiles for
+    const zoom = 19; // Replace with the desired zoom level
 
-//     // Fetch tiles for the specified area and zoom level
-//     const tiles = getTilesForBounds(bounds, zoom);
+    // Fetch tiles for the specified area and zoom level
+    const tiles = getTilesForBounds(bounds, zoom);
 
-//     // Download tiles one by one with a delay
-//     downloadTilesWithDelay(tiles, 500); // Adjust the delay (in milliseconds) as needed
+    // Download tiles one by one with a delay
+    downloadTilesWithDelay(tiles, 500); // Adjust the delay (in milliseconds) as needed
 
-//     // Optional: Clear the drawn layer if needed
-//     // map.removeLayer(layer);
-// }
+    // Optional: Clear the drawn layer if needed
+    // map.removeLayer(layer);
+}
 
-// function getTilesForBounds(bounds, zoom) {
-//     const tiles = [];
-//     const tileSize = 256; // Standard tile size in pixels
 
-//     const nw = bounds.getNorthWest();
-//     const se = bounds.getSouthEast();
+var drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
 
-//     const startCoord = map.project(nw, zoom);
-//     const endCoord = map.project(se, zoom);
+var drawControl = new L.Control.Draw({
+    draw: {
+        polyline: false,
+        rectangle: false,
+        circle: false,
+        marker: false,
+        circlemarker: false,
+        polygon: true
+    }
+});
+map.addControl(drawControl);
 
-//     for (let x = Math.floor(startCoord.x / tileSize); x <= Math.floor(endCoord.x / tileSize); x++) {
-//         for (let y = Math.floor(startCoord.y / tileSize); y <= Math.floor(endCoord.y / tileSize); y++) {
-//             const tileUrl = tileLayer.getTileUrl(L.point(x, y), zoom);
-//             tiles.push({ x, y, zoom, tileUrl });
+
+
+// map.on('draw:created', function (event) {
+//     var layer = event.layer;
+//     drawnItems.addLayer(layer);
+
+//     if (layer instanceof L.Polygon) {
+//         var bounds = layer.getBounds();
+//         map.fitBounds(bounds, { maxZoom: 18 });
+
+//         getTileUrls(bounds, 18); // Fetch tiles for zoom level 19
+//     }
+// });
+
+// function getTileUrls(bounds, zoom) {
+
+//     var northWestTile = map.project(bounds.getNorthWest(), zoom).divideBy(256).floor();
+//     var southEastTile = map.project(bounds.getSouthEast(), zoom).divideBy(256).ceil();
+
+//     var tiles = [];
+
+//     for (var i = northWestTile.x; i <= southEastTile.x; i++) {
+//         for (var j = northWestTile.y; j <= southEastTile.y; j++) {
+//             var tileUrl = 'http://mt2.google.com/vt/lyrs=s&x=' + i + '&y=' + j + '&z=' + zoom;
+//             tiles.push(tileUrl);
 //         }
 //     }
 
-//     return tiles;
-// }
-
-// async function downloadTilesWithDelay(tiles, delay) {
-//     for (let i = 0; i < tiles.length; i++) {
-//         const tile = tiles[i];
-//         await downloadTile(tile);
-//         await new Promise(resolve => setTimeout(resolve, delay));
-//     }
-// }
-
-// async function downloadTile(tile) {
-//     try {
-//         const response = await fetch(tile.tileUrl);
-
-//         if (!response.ok) {
-//             throw new Error(`Failed to fetch tile: ${response.status} ${response.statusText}`);
-//         }
-
-//         const blob = await response.blob();
-
-//         // Create a link element to trigger the download
-//         const link = document.createElement('a');
-//         link.href = URL.createObjectURL(blob);
-//         link.download = `tile_${tile.x}_${tile.y}_${tile.zoom}.png`;
-
-//         // Append the link to the document
-//         document.body.appendChild(link);
-
-//         // Trigger the download
-//         link.click();
-
-//         // Remove the link from the document
-//         document.body.removeChild(link);
-
-//         // Log a message for each tile downloaded (optional)
-//         console.log(`Tile ${tile.x}_${tile.y}_${tile.zoom} downloaded.`);
-//     } catch (error) {
-//         console.error('Error downloading tile:', error.message);
-//     }
-// }
+//     console.log("Tile URLs:", tiles);
 
 
+var tiles = [];  // Global variable
+
+// Function to close the new popup
+function closeModelPopup() {
+    document.getElementById('newPopup').style.display = 'none';
+    loadingSpinner.style.display = 'none';
+    menubars.style.display = 'flex';
+    tiles = [];  // Global variable
+}
+
+var polygonGeoJSON; // Global variable to store the drawn polygon's GeoJSON
+var lastDrawnPolygon = null; // Variable to keep track of the last drawn polygon
+// Function to clear the icons
+function clearIcons() {
+    const iconBar = document.getElementById('iconBar');
+    iconBar.innerHTML = ''; // Clear existing icons
+}
+
+map.on('draw:created', function (event) {
+    if(lastDrawnPolygon){
+        removeLastDrawnPolygon();
+        clearIcons();
+    }
+
+    var layer = event.layer;
+    drawnItems.addLayer(layer);
+
+    if (layer instanceof L.Polygon) {
+        var bounds = layer.getBounds();
+        map.fitBounds(bounds, { maxZoom: 18 });
+
+        var latlngs = layer.getLatLngs()[0]; // Assuming it's a simple polygon
+        // Convert Leaflet LatLngs to GeoJSON Polygon
+        var coordinates = latlngs.map(function (latlng) {
+            return [latlng.lng, latlng.lat];
+        });
+        coordinates.push(coordinates[0]); // Close the polygon
+
+        polygonGeoJSON = turf.polygon([coordinates]);
+        getTileUrls(bounds, 18, polygonGeoJSON);
+        lastDrawnPolygon = layer;
+
+    }
+});
+
+function removeLastDrawnPolygon() {
+    if (lastDrawnPolygon) {
+        drawnItems.removeLayer(lastDrawnPolygon);
+        lastDrawnPolygon = null; // Reset the reference
+    } else {
+        alert('No last drawn polygon to remove.');
+    }
+}
+
+function getTileUrls(bounds, zoom, polygonGeoJSON) {
+
+    var northWestTile = map.project(bounds.getNorthWest(), zoom).divideBy(256).floor();
+    var southEastTile = map.project(bounds.getSouthEast(), zoom).divideBy(256).ceil();
+
+    for (var i = northWestTile.x; i <= southEastTile.x; i++) {
+        for (var j = northWestTile.y; j <= southEastTile.y; j++) {
+            var tileBounds = L.bounds([i * 256, j * 256], [(i + 1) * 256, (j + 1) * 256]);
+            var sw = map.unproject(tileBounds.getBottomLeft(), zoom);
+            var ne = map.unproject(tileBounds.getTopRight(), zoom);
+
+            var tilePolygon = turf.polygon([[
+                [sw.lng, sw.lat],
+                [ne.lng, sw.lat],
+                [ne.lng, ne.lat],
+                [sw.lng, ne.lat],
+                [sw.lng, sw.lat] // Closing the polygon
+            ]]);
+
+            if (turf.intersect(polygonGeoJSON, tilePolygon)) {
+                var tileUrl = 'http://mt2.google.com/vt/lyrs=s&x=' + i + '&y=' + j + '&z=' + zoom;
+                tiles.push(tileUrl);
+            }
+        }
+    }
+
+    document.getElementById('newPopup').style.display = 'flex';
+}
+
+function filterObjectsWithinPolygon(detectedGeoJSON, polygonGeoJSON) {
+    var filteredFeatures = detectedGeoJSON.features.filter(function (feature) {
+        // Ensure the feature has a geometry
+        if (feature.geometry) {
+            // Using turf.booleanWithin to check if the feature is entirely within the polygon
+            var isWithin = turf.booleanWithin(feature, polygonGeoJSON);
+
+            // Alternatively, using turf.intersects to check for any overlap
+            // var intersects = turf.intersects(feature, polygonGeoJSON);
+            // var isWithin = intersects !== null;
+
+            return isWithin;
+        } else {
+            console.error('Feature does not have a valid geometry:', feature);
+            return false;
+        }
+    });
+
+    return {
+        type: "FeatureCollection",
+        features: filteredFeatures
+    };
+}
+
+function handleModelClick(filePath) {
+    loadingSpinner.style.display = 'block';
+    menubars.style.display = 'none';
+    // Clear existing layers
+    map.eachLayer(l => {
+        if (l instanceof L.GeoJSON) {
+            map.removeLayer(l);
+        }
+    });
+
+
+    var element = document.querySelector('.leaflet-draw-draw-polygon');
+    if (element) {
+        element.style.display = 'none';
+    }
+
+
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
+    document.getElementById('newPopup').style.display = 'none';
+
+    fetch(`/download-tiles`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tiles: tiles, userId: jsonDataString ? jsonDataString.user._id : '', modelPath: filePath }),
+    })
+        .then(response => response.json())
+        .then(data => {
+            // Filter the received GeoJSON data to include only objects within the polygon
+            var filteredGeoJSON = filterObjectsWithinPolygon(data.geojson, polygonGeoJSON);
+
+            // Create the GeoJSON layer with popups for each filtered feature and add it to the map
+            var myLayer = L.geoJSON(filteredGeoJSON, {
+                onEachFeature: function (feature, layer) {
+                    if (feature.properties && feature.properties.name) {
+                        layer.bindPopup(feature.properties.name);
+                    }
+                },
+                style: function (feature) {
+                    return {
+                        color: feature.properties.color ? feature.properties.color : '#000000', // Default to black if color is not specified
+                        weight: 2,
+                        opacity: 1
+                    };
+                }
+            }).addTo(map);
+
+            const classes = extractDetectedClasses(filteredGeoJSON.features);
+            const color = extractDetectedColor(filteredGeoJSON.features);
+            const objectsPerClass = calculateObjectsPerClass(filteredGeoJSON.features);
+            const totalClasses = filteredGeoJSON.features.length;
+
+            updateIconContentOnPage(classes, color, objectsPerClass, totalClasses);
+            loadingSpinner.style.display = 'none';
+            menubars.style.display = 'flex';
+            tiles = [];
+            var element = document.querySelector('.leaflet-draw-draw-polygon');
+            if (element) {
+                element.style.display = 'block';
+            }
+            
+           
+        })
+        .catch(error => {
+
+            loadingSpinner.style.display = 'none';
+            menubars.style.display = 'flex';
+            var element = document.querySelector('.leaflet-draw-draw-polygon');
+            if (element) {
+                element.style.display = 'block';
+            }
+            console.error('Error:', error)
+        });
+}
 
 
 function downloadMap() {
@@ -455,6 +675,7 @@ function downloadMap() {
             map.removeLayer(l);
         }
     });
+
 
     loadingSpinner.style.display = 'block';
     menubars.style.display = 'none';
@@ -693,8 +914,6 @@ async function fetchRecentGeoJSONAll() {
 
                 // Add new data to the map
                 const newLayer = L.geoJSON(data, {
-                    crs: L.CRS.EPSG4326,
-                    //crs:L.CRS.EPSG3857,
                     style: function (feature) {
                         return {
                             color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified

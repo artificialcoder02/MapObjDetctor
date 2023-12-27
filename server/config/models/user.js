@@ -32,6 +32,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    folderCreatedeDated:{
+        type: String,
+    },
     resetToken: {
         type: String,
         default: '',

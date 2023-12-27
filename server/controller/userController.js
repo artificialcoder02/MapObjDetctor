@@ -1,4 +1,4 @@
-                const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 const User = require('../config/models/user');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
@@ -33,7 +33,7 @@ const sendEmail = async (to, subject, htmlContent) => {
         port: 587,               // Commonly 587 for TLS or 465 for SSL
         secure: false,           // True for 465 (SSL), false for other ports
         auth: {
-            user:  process.env.EMAIL_USERNAME, // Replace with your SMTP username
+            user: process.env.EMAIL_USERNAME, // Replace with your SMTP username
             pass: process.env.EMAIL_PASSWORD,            // Replace with your SMTP password
         },
     };
@@ -107,7 +107,7 @@ const UserController = {
                 sameSite: "None",
                 secure: true,
                 httpOnly: true,
-              });
+            });
 
             res.send({ user, token });
         } catch (error) {
@@ -116,7 +116,7 @@ const UserController = {
         }
     },
 
-    logoutss : async (req, res) => {
+    logoutss: async (req, res) => {
         try {
             const token = req.cookies.jwt;
             const decoded = jwt.verify(token, process.env.JWT_TOKEN);
@@ -134,14 +134,14 @@ const UserController = {
                 secure: true,
                 httpOnly: true,
             });
-    
+
             res.send({ message: "Logout successful" });
         } catch (error) {
             console.error(error);
             res.status(500).send({ error: "Internal Server Error" });
         }
     },
-    
+
     getUserDetails: async (req, res) => {
         try {
             res.send(req.user);
@@ -268,7 +268,9 @@ const UserController = {
             for (const subDir of runSubDirs) {
                 await fs.mkdir(path.join(runDir, subDir), { recursive: true });
             }
-
+            // Update the folderCreatedeDated field with the current date in YYYY-MM-DD format
+            const currentDate = new Date().toISOString().split('T')[0];
+            user.folderCreatedeDated = currentDate;
             user.verified = true;
             await user.save();
             res.status(200).json({ message: 'User verification successful' });
@@ -292,6 +294,20 @@ const UserController = {
             res.send({ isLoggedIn: true, user });
         } catch (error) {
             res.send({ isLoggedIn: false });
+        }
+    },
+    checkFolder: async (req, res) => {
+        try {
+            const users = await User.find(); // Fetch all users
+            const userFolders = users.map(user => {
+                return {
+                    userID: user._id.toString(),
+                    folderData: user.folderCreatedeDated // Assuming this field holds the creation date
+                };
+            });
+            res.json(userFolders);
+        } catch (error) {
+            res.status(500).send('Error fetching users');
         }
     },
 };

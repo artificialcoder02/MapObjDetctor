@@ -2,11 +2,13 @@ const express = require('express');
 const app = express();
 const fs = require('fs');
 const { exec } = require('child_process');
+const axios = require('axios');
 const path = require('path');
 const cors = require("cors");
 const dotenv = require('dotenv').config();
 const sizeOf = require('image-size');
 const bodyParser = require('body-parser');
+const cron = require('node-cron');
 const cookieParser = require('cookie-parser');
 const archiver = require('archiver');
 app.use(bodyParser.json({ limit: '10000mb' }));
@@ -14,6 +16,7 @@ const multer = require('multer');
 const connectMongo = require("./config/db/config.js");
 const userRouter = require('./router/userRoute.js')
 const util = require('util');
+const { $where } = require('./config/models/user.js');
 const readdirAsync = util.promisify(fs.readdir);
 process.env.PROJ_LIB = "C:\\ProgramData\\anaconda3\\pkgs\\proj-6.2.1-h3758d61_0\\Library\\share\\proj";
 
@@ -49,28 +52,6 @@ if (!fs.existsSync(modelFolder)) {
     // If it doesn't exist, create it
     fs.mkdirSync(modelFolder);
 }
-
-// // Sort the list of image files by creation time (most recent first)
-// imageFiles.sort((fileA, fileB) => {
-//     return fs.statSync(path.join(imageFolder, fileB)).ctime.getTime() - fs.statSync(path.join(imageFolder, fileA)).ctime.getTime();
-// });
-
-// // Check if there are any image files in the folder
-// if (imageFiles.length === 0) {
-//     console.error('No image files found in the folder.');
-//     return res.status(500).json({ error: 'No image files found' });
-// }
-
-// // Choose the most recent image file
-// const mostRecentImage = path.join(imageFolder, imageFiles[0]);
-
-// // Get the image dimensions synchronously
-// const dimensions = sizeOf(mostRecentImage);
-
-// // Extract the width and height
-// const imageWidth = dimensions.width;
-// const imageHeight = dimensions.height;
-
 
 // Serve the HTML file for the root URL
 app.use(express.static("client"));
@@ -678,38 +659,166 @@ app.get('/training-from-scratch', (req, res) => {
 });
 
 
-app.get('/training-from-pretrained', (req, res) => {
-    const train = path.join(__dirname, 'yolov5', 'train.py');
 
-    // Set up SSE
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+// Function to calculate tile bounds
+function calculateBounds(x, y, zoom) {
+    const tile2long = (x, z) => (x / Math.pow(2, z)) * 360 - 180;
+    const tile2lat = (y, z) => {
+        const n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
+        return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    };
 
-    const cmd = `python3 ${train} --data data.yaml --weights yolov5x6.pt --epochs 10`;
+    return {
+        west: tile2long(x, zoom),
+        north: tile2lat(y, zoom),
+        east: tile2long(x + 1, zoom),
+        south: tile2lat(y + 1, zoom)
+    };
+}
 
-    const childProcess = exec(cmd);
+// Function to convert PNG to GeoTIFF using GDAL
+function convertToGeoTIFF(inputFile, outputFile, bounds) {
+    const { west, north, east, south } = bounds;
+    const command = `gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${west} ${north} ${east} ${south} ${inputFile} ${outputFile}`;
 
-    childProcess.stderr.on('data', (data) => {
-        // Send stderr data as SSE messages
-        res.write(`data: ${data}\n\n`);
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.error(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(`stdout: ${stdout}`);
     });
+}
 
-    childProcess.on('close', (code) => {
-        // Close the SSE connection when the child process is done
-        res.end(`data: Process exited with code ${code}\n\n`);
+
+app.post('/download-tiles', async (req, res) => {
+    const tiles = req.body.tiles;
+    const modelPath = req.body.modelPath;
+    const userId = req.body.userId;
+
+    if (!Array.isArray(tiles) || tiles.length === 0) {
+        return res.status(400).send({ message: 'No tiles provided' });
+    }
+
+    const downloadPath = path.join(__dirname, 'downloaded_tiles');
+    if (!fs.existsSync(downloadPath)) {
+        fs.mkdirSync(downloadPath);
+    }
+
+    try {
+        for (let i = 0; i < tiles.length; i++) {
+            const tileUrl = tiles[i];
+            const tilePath = path.join(downloadPath, `tile_${i}.png`);
+            const geotiffPath = path.join(downloadPath, `tile_${i}.tif`);
+
+            // Download tile using axios
+            const response = await axios.get(tileUrl, { responseType: 'arraybuffer' });
+            fs.writeFileSync(tilePath, response.data);
+
+            // Extract x, y, and z from the URL
+            const match = /x=(\d+)&y=(\d+)&z=(\d+)/.exec(tileUrl);
+            if (!match) {
+                console.error('Failed to extract tile coordinates from URL');
+                continue; // Skip this tile if coordinates cannot be extracted
+            }
+            const [_, x, y, z] = match.map(Number);
+            const bounds = calculateBounds(x, y, z);
+
+            // Convert to GeoTIFF
+            convertToGeoTIFF(tilePath, geotiffPath, bounds);
+        }
+
+    //     res.send({ message: 'Tiles downloaded and converted successfully' });
+    // } catch (error) {
+    //     console.error(error);
+    //     res.status(500).send({ message: 'Error processing tiles' });
+    // }
+    const directoryPath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
+
+    console.log(directoryPath);
+    runObjectDetection(downloadPath, modelPath, directoryPath,  () => {
+         // Read the directory
+         fs.readdir(directoryPath, (err, files) => {
+                
+            if (err) {
+                console.error('Error reading directory:', err);
+                return res.status(500).json({ error: 'Error reading directory' });
+            } else {
+                // Filter the files with the pattern "output_<number>.geojson"
+                const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
+                
+           
+                // Sort the files by the creation time
+                geojsonFiles.sort((fileA, fileB) => {
+                    return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
+                });
+
+                // Get the latest file
+                const latestFile = geojsonFiles[0];
+
+                // Read the file and load the data into a variable
+                fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
+                    console.log(err);
+                    
+                    if (err) {
+                        console.error('Error reading file:', err);
+                        return;
+                    } else {
+                        try {
+                            const jsonData = JSON.parse(data); // assuming the file contains JSON data
+                            // Use the jsonData variable as required/
+                            // console.log(jsonData);
+                            console.log('Loaded data:', jsonData);
+                            fs.rm(downloadPath, { recursive: true, force: true }, (err) => {
+                                if (err) {
+                                    throw err;
+                                }
+                                console.log('Directory deleted!');
+                            });
+                            return res.status(200).json({ geojson: jsonData });
+                        } catch (error) {
+                            console.error('Error parsing JSON data:', error);
+                            return res.status(500).json({ error: 'Error parsing JSON data' });
+                        }
+                    }
+                });
+            }
+        });
     });
+        } catch (error) {
+            console.error(error);
+            res.status(500).send({ message: 'Error processing tiles' });
+        }
+        });
 
-    childProcess.on('error', (error) => {
-        console.error(`Error executing YOLOv5: ${error}`);
-        res.status(500).end(`data: Error performing training Model\n\n`);
-    });
-});
+        function runObjectDetection(geoTiffDirectory, modelPath, outputFolder, callback) {
+            const pythonScriptPath = path.join(__dirname, 'scripts', 'bulk_tiffer.py');
+            //const modelPath = path.join(__dirname, 'model', 'DOTAV2_100_Epoch.pt');
+            // const outputFolder = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
+
+        const command = `python ${pythonScriptPath} --model ${modelPath} --source ${geoTiffDirectory} --output ${outputFolder}`;
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                console.error(`stderr: ${stderr}`);
+                return;
+            }
+            console.log(`stdout: ${stdout}`);
+            callback();
+        });
+        }
 
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-});
-
-
+        app.listen(3000, () => {
+            console.log('Server is running on port 3000');
+        });
 
 
