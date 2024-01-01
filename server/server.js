@@ -29,6 +29,34 @@ app.use(cors({
     credentials: true
 }));
 
+const runsFolder = path.join(__dirname, 'runs');
+// Check if the directory exists
+if (!fs.existsSync(runsFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(runsFolder);
+}
+
+const detectFolder = path.join(__dirname, 'runs', 'detect');
+// Check if the directory exists
+if (!fs.existsSync(detectFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(detectFolder);
+}
+
+const geotFolder = path.join(__dirname, 'geot');
+// Check if the directory exists
+if (!fs.existsSync(geotFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(geotFolder);
+}
+
+const geojFolder = path.join(__dirname, 'geoj');
+// Check if the directory exists
+if (!fs.existsSync(geojFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(geojFolder);
+}
+
 
 const fileSystem = require('fs').promises; // Use a different variable name for the fs module
 
