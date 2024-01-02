@@ -1643,3 +1643,78 @@ function downloadShapefile() {
             console.error('Request error:', error);
         });
 }
+
+// function downloadSample() {
+//     const jsonDataString = JSON.parse(localStorage.getItem('user'));
+//     // Send an HTTP request to the server to generate the shapefile.
+//     fetch(`/generate-samplefile?userId=${jsonDataString ? jsonDataString.user._id : ''}`, {
+//         method: 'POST',
+//     })
+//         .then(response => {
+//             if (response.ok) {
+//                 // The server successfully generated the shapefile.
+//                 return response.blob(); // Convert response to a Blob
+//             } else {
+//                 // Handle errors.
+//                 console.error('Failed to download sample dataset');
+//                 throw new Error('Failed to download sample dataset.'); // Propagate the error
+//             }
+//         })
+//         .then(blob => {
+//             // Create a download link
+//             const url = URL.createObjectURL(blob);
+//             const a = document.createElement('a');
+//             a.href = url;
+//             a.download = 'sample.zip'; // Set the desired file name
+//             document.body.appendChild(a); // Append the link to the document
+//             a.click(); // Simulate a click on the link to trigger the download
+//             document.body.removeChild(a); // Remove the link from the document
+//             console.log('Download initiated successfully.');
+//         })
+//         .catch(error => {
+//             // Handle network or other errors.
+//             console.error('Request error:', error);
+//         });
+// }
+
+function downloadSample() {
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+    console.log('Starting download...');
+
+    fetch(`/generate-samplefile?userId=${jsonDataString ? jsonDataString.user._id : ''}`, {
+        method: 'POST',
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob(); // Convert response to a Blob
+        } else {
+            console.error('Failed to download sample dataset');
+            throw new Error('Failed to download sample dataset.'); // Propagate the error
+        }
+    })
+    .then(blob => {
+        if (blob.size > 0) {
+            // Create a download link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sample.zip'; // Set the desired file name
+            document.body.appendChild(a); // Append the link to the document
+            a.click(); // Simulate a click on the link to trigger the download
+            document.body.removeChild(a); // Remove the link from the document
+            URL.revokeObjectURL(url); // Clean up the Blob URL
+            console.log('Download initiated successfully.');
+        } else {
+            console.error('Received an empty file.');
+            // Handle the case of an empty file here
+        }
+    })
+    .catch(error => {
+        console.error('Request error:', error);
+    })
+    .finally(() => {
+        console.log('Download process completed.'); // End loading indicator
+    });
+}
+
+

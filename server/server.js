@@ -492,6 +492,27 @@ app.post('/generate-shapefile', (req, res) => {
 });
 
 
+app.post('/generate-samplefile', (req, res) => {
+    // const userId = req.query.userId; // Uncomment if user-specific logic is needed
+
+    const zipFilePath = path.join(__dirname, 'sampledata', 'sample.zip');
+
+    if (fs.existsSync(zipFilePath)) {
+        const fileSize = fs.statSync(zipFilePath).size;
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Length', fileSize);
+
+        const filestream = fs.createReadStream(zipFilePath);
+        filestream.on('error', function (err) {
+            console.error('Stream error:', err);
+            res.status(500).send('Internal Server Error');
+        });
+        filestream.pipe(res);
+    } else {
+        res.status(404).json({ error: 'File not found' });
+    }
+});
+
 app.get('/get-geojson-by-class', (req, res) => {
     let userId = req.query.userId;
 
