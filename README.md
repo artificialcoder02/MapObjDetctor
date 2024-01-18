@@ -1,7 +1,3 @@
-Sure! Here's a basic README template for your project:
-
----
-
 # Satellite Object Detective: Leaflet & YOLOv8 Integration
 
 Satellite Object Detective is a web application that integrates Leaflet maps with YOLOv5, allowing for object detection on satellite imagery. This project enables users to browse satellite imagery, detect objects, and add annotations to the map.

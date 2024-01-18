@@ -56,8 +56,6 @@ if (!fs.existsSync(geojFolder)) {
     // If it doesn't exist, create it
     fs.mkdirSync(geojFolder);
 }
-
-
 const modelSegFolder = path.join(__dirname, 'model-seg');
 // Check if the directory exists
 if (!fs.existsSync(modelSegFolder)) {
