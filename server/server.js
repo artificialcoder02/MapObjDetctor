@@ -29,6 +29,43 @@ app.use(cors({
     credentials: true
 }));
 
+const runsFolder = path.join(__dirname, 'runs');
+// Check if the directory exists
+if (!fs.existsSync(runsFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(runsFolder);
+}
+
+const detectFolder = path.join(__dirname, 'runs', 'detect');
+// Check if the directory exists
+if (!fs.existsSync(detectFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(detectFolder);
+}
+
+const geotFolder = path.join(__dirname, 'geot');
+// Check if the directory exists
+if (!fs.existsSync(geotFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(geotFolder);
+}
+
+const geojFolder = path.join(__dirname, 'geoj');
+// Check if the directory exists
+if (!fs.existsSync(geojFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(geojFolder);
+}
+
+
+const modelSegFolder = path.join(__dirname, 'model-seg');
+// Check if the directory exists
+if (!fs.existsSync(modelSegFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(modelSegFolder);
+}
+
+
 
 const fileSystem = require('fs').promises; // Use a different variable name for the fs module
 
@@ -153,64 +190,66 @@ app.get("/ptr-retrained", (req, res) => {
 app.get('/files', async (req, res) => {
     try {
         const userId = req.query.userId;
+        const baseFolderPath = path.join(__dirname, 'userData');
+        const defaultModelFolderPath = path.join(__dirname, 'model');
+        const defaultModelSegFolderPath = path.join(__dirname, 'model-seg');
+
+        // Read default files
+        const defaultFiles = await readdirAsync(defaultModelFolderPath);
+        const defaultSegFiles = await readdirAsync(defaultModelSegFolderPath);
+
+        let userFolderPath, userSegFolderPath, userFiles, userSegFiles;
         if (userId) {
-            const baseFolderPath = path.join(__dirname, 'userData');
-            const defaultModelFolderPath = path.join(__dirname, 'model');
-            const defaultFiles = await readdirAsync(defaultModelFolderPath);
-            const userFolderPath = path.join(baseFolderPath, `${userId}`, 'training', 'runs', 'detect');
-            // Create the directory recursively
-            fs.mkdirSync(userFolderPath, { recursive: true }, (err) => {
-                if (err) {
-                    console.error(`Error creating directory: ${userFolderPath}`, err);
-                } else {
-                    console.log(`Directory created: ${userFolderPath}`);
-                }
-            });
-            const userFiles = await readdirAsync(userFolderPath);
+            userFolderPath = path.join(baseFolderPath, `${userId}`, 'training', 'runs', 'detect');
+            userSegFolderPath = path.join(baseFolderPath, `${userId}`, 'training', 'runs', 'segment');
 
-            const constructFileObject = (folderPath, file) => {
-                const filePath = path.join(folderPath, file);
-                const fileName = path.parse(file).name;
+            // Create directories for user files
+            try {
+                fs.mkdirSync(userFolderPath, { recursive: true });
+                fs.mkdirSync(userSegFolderPath, { recursive: true });
+            } catch (err) {
+                console.error(`Error creating directory: ${err}`);
+            }
 
-                return {
-                    filename: fileName,
-                    path: filePath,
-                };
+            // Read user files
+            userFiles = await readdirAsync(userFolderPath);
+            userSegFiles = await readdirAsync(userSegFolderPath);
+        }
+
+        // Function to construct file objects
+        const constructFileObject = (folderPath, file) => {
+            const filePath = path.join(folderPath, file);
+            const fileName = path.parse(file).name;
+
+            return {
+                filename: fileName,
+                path: filePath,
             };
+        };
 
-            const defaultFileObjects = defaultFiles.map(file => constructFileObject(defaultModelFolderPath, file));
-            const userFileObjects = userFiles.map(folder => constructFileObject(userFolderPath, folder));
+        // Construct file objects for default and user files
+        const defaultFileObjects = defaultFiles.map(file => constructFileObject(defaultModelFolderPath, file));
+        const defaultSegFileObjects = defaultSegFiles.map(file => constructFileObject(defaultModelSegFolderPath, file));
+        const userFileObjects = userId ? userFiles.map(file => constructFileObject(userFolderPath, file)) : [];
+        const userSegFileObjects = userId ? userSegFiles.map(file => constructFileObject(userSegFolderPath, file)) : [];
 
-            res.json({
+        // Form and send the response
+        res.json({
+            dection: {
                 defaultFiles: defaultFileObjects,
                 userFiles: userFileObjects,
-            });
-        }
-        else {
-            const defaultModelFolderPath = path.join(__dirname, 'model');
-            const defaultFiles = await readdirAsync(defaultModelFolderPath);
-
-            const constructFileObject = (folderPath, file) => {
-                const filePath = path.join(folderPath, file);
-                const fileName = path.parse(file).name;
-
-                return {
-                    filename: fileName,
-                    path: filePath,
-                };
-            };
-            const defaultFileObjects = defaultFiles.map(file => constructFileObject(defaultModelFolderPath, file));
-
-            res.json({
-                defaultFiles: defaultFileObjects,
-                userFiles: '',
-            });
-        }
+            },
+            segment: {
+                defaultFiles: defaultSegFileObjects,
+                userFiles: userSegFileObjects,
+            }
+        });
     } catch (error) {
         console.error('Error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
+
 
 
 app.post('/save-captured-image', (req, res) => {
@@ -227,12 +266,10 @@ app.post('/save-captured-image', (req, res) => {
     // Specify the path to the "image" folder
     const imagePath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'image', fileName) : path.join(__dirname, 'image', fileName);
 
-
     // Write the base64 data to a PNG file
     fs.writeFile(imagePath, base64Data, 'base64', (err) => {
         if (err) {
             console.error('Error saving image:', err);
-            return res.status(500).json({ error: 'Error saving image' });
         }
         console.log('Image saved successfully');
 
@@ -310,7 +347,7 @@ app.post('/save-captured-image', (req, res) => {
 
         exec(`gdal_translate -of GTiff -a_srs EPSG:4326 -a_ullr ${northWest.lng} ${northWest.lat} ${southEast.lng} ${southEast.lat} ${imagePath} ${geoTiffFilePath}`, (error, stdout, stderr) => {
             if (error) {
-                console.error(`Error executing Script: ${stderr}`);
+                console.error(`Error executing Script GDAL: ${error}`);
                 return res.status(500).json({ error: 'Error constructing tif file' });
             }
             console.log(stdout);
@@ -464,6 +501,27 @@ app.post('/generate-shapefile', (req, res) => {
 });
 
 
+app.post('/generate-samplefile', (req, res) => {
+    // const userId = req.query.userId; // Uncomment if user-specific logic is needed
+
+    const zipFilePath = path.join(__dirname, 'sampledata', 'sample.zip');
+
+    if (fs.existsSync(zipFilePath)) {
+        const fileSize = fs.statSync(zipFilePath).size;
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Length', fileSize);
+
+        const filestream = fs.createReadStream(zipFilePath);
+        filestream.on('error', function (err) {
+            console.error('Stream error:', err);
+            res.status(500).send('Internal Server Error');
+        });
+        filestream.pipe(res);
+    } else {
+        res.status(404).json({ error: 'File not found' });
+    }
+});
+
 app.get('/get-geojson-by-class', (req, res) => {
     let userId = req.query.userId;
 
@@ -531,7 +589,7 @@ app.get('/folder', (req, res) => {
     const newFolderPath = path.join(baseFolderPath, `annotations${newFolderNumber}`);
     fs.mkdirSync(newFolderPath);
 
-    const subfolders = ['train/images', 'train/labels', 'test/images', 'test/labels', 'valid/images', 'valid/labels'];
+    const subfolders = ['train/images', 'train/labels', 'test/images', 'test/labels', 'val/images', 'val/labels'];
     subfolders.forEach(subfolder => {
         const subfolderPath = path.join(newFolderPath, subfolder);
         fs.mkdirSync(subfolderPath, { recursive: true });

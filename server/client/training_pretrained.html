@@ -110,9 +110,16 @@
 </head>
 
 <body onload=" fetchData()">
-    <div class="container">
+    <div class="container" style="margin-top: 20px;">
         <h1>YOLOv8 - Training from Pre-trained</h1>
         <form id="trainingForm">
+            <!-- Add Object Detection Type Dropdown -->
+            <label for="objectDetectionType">Choose Object Detection Type:</label>
+            <select id="objectDetectionType" onChange="fetchData()">
+                <option value="detect">Detect</option>
+                <option value="segment">Segment</option>
+            </select>
+
             <label for="Enter the your name">Name:</label>
             <input type="text" id="name" name="name" required>
             <!-- Basic Training Fields -->
@@ -214,6 +221,7 @@
 
 
 
+      
         async function fetchData() {
             const jsonDataString = JSON.parse(localStorage.getItem('user'));
 
@@ -223,13 +231,11 @@
             // Set the JSON response in session storage
             sessionStorage.setItem('responseData', JSON.stringify(resp));
 
+            const objectDetectionType = document.getElementById('objectDetectionType').value;
 
             // Retrieve the data from session storage
             const storedData = sessionStorage.getItem('responseData');
             const data = JSON.parse(storedData);
-
-            // Now, 'data' contains the JSON response
-            // console.log('Data:', data);
 
             // Create a select element
             const selectElement = document.getElementById('models');
@@ -243,23 +249,25 @@
             defaultOption.textContent = 'Select Model';
             selectElement.appendChild(defaultOption);
 
-            // Create and add user model options
-            data.userFiles.forEach(userFile => {
+            // Filter and create model options based on the selected objectDetectionType
+            const modelFiles = objectDetectionType === 'detect' ? data?.dection?.defaultFiles : data?.segment?.defaultFiles;
+            const userFiles = objectDetectionType === 'detect' ? data?.dection?.userFiles : data?.segment?.userFiles;
+
+            modelFiles.forEach(modelFile => {
+                const modelOption = document.createElement('option');
+                modelOption.value = modelFile.path;
+                modelOption.textContent = `${objectDetectionType === 'detect' ? 'Default' : 'Segment'} Model - ${modelFile.filename}`;
+                selectElement.appendChild(modelOption);
+            });
+
+            // Create and add user model options based on the selected objectDetectionType
+            userFiles.forEach(userFile => {
                 const userOption = document.createElement('option');
                 userOption.value = userFile.path;
-                userOption.textContent = `User Model - ${userFile.filename}`;
+                userOption.textContent = `${objectDetectionType === 'detect' ? 'Default' : 'Segment'} Model - ${userFile.filename}`;
                 selectElement.appendChild(userOption);
             });
-
-            // Create and add default model option
-            data.defaultFiles.forEach(defaultFile => {
-                const defaultOption = document.createElement('option');
-                defaultOption.value = defaultFile.path;
-                defaultOption.textContent = `Default Model - ${defaultFile.filename}`;
-                selectElement.appendChild(defaultOption);
-            });
         }
-
 
 
         // Function to check login status and update local storage every 3 seconds
@@ -438,6 +446,10 @@
                 formData.append(input.id.replace("Input", ""), input.value);
             });
 
+            // Include the selected object detection type in the script
+            var objectDetectionType = document.getElementById("objectDetectionType").value;
+
+
             // Convert FormData to a plain object
             var formObject = {};
             formData.forEach(function (value, key) {
@@ -448,11 +460,10 @@
             // Get the selected model value from the <select> element
             var selectedModel = document.getElementById("models").value;
             if (selectedModel.includes("userData")) {
-                script = `yolo detect train model=${selectedModel + '/weights/last.pt'} resume=true`;
+                script = `yolo ${objectDetectionType} train model=${selectedModel + '/weights/last.pt'} `;
             } else {
-                script = `yolo detect train model=${selectedModel} resume=true`;
+                script = `yolo ${objectDetectionType} train model=${selectedModel} `;
             }
-            console.log(formObject);
 
 
             // Append the selected model value to the script string

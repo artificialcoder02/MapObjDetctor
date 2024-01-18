@@ -12,10 +12,14 @@ userLoginDivBtntwo.style.display = 'none';
 document.getElementById('training_btn').style.display = 'none';
 document.getElementById('userShape').style.display = 'none';
 document.getElementById('userModel').style.display = 'none';
+document.getElementById('userModelSeg').style.display = 'none';
+document.getElementById('userShapeSeg').style.display = 'none';
 document.getElementById('tainImage').style.display = 'none';
 document.getElementById('valImage').style.display = 'none';
 document.getElementById('xmlImage').style.display = 'none';
 document.getElementById('newPopupUserModel').style.display = 'none';
+document.getElementById('newPopupUserModelSeg').style.display = 'none';
+
 document.getElementById('nononon').style.width = '20%';
 
 
@@ -63,6 +67,8 @@ const checkLoginStatus = async () => {
         const user = await response.json();
         if (user?.isLoggedIn === true) {
             document.getElementById('newPopupUserModel').style.display = 'block';
+            document.getElementById('newPopupUserModelSeg').style.display = 'block';
+
             document.getElementById('nononon').style.width = '55%';
             return { isLoggedIn: true, user };
         }
@@ -71,6 +77,126 @@ const checkLoginStatus = async () => {
         localStorage.removeItem('user');
     }
 };
+
+
+// async function fetchData() {
+//     const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
+//     const response = await fetch(`/files?userId=${jsonDataString ? jsonDataString?.user?._id : ''}`);
+//     const resp = await response.json();
+
+//     if (!resp.error) {
+//         // Set the JSON response in session storage
+//         sessionStorage.setItem('modelResponseData', JSON.stringify(resp));
+
+//         // Clear existing content in the lists
+//         clearModelList('userModelListPopup');
+//         clearModelList('defaultModelListPopup');
+
+//         // Retrieve the data from session storage
+//         const storedDataNE = sessionStorage.getItem('modelResponseData');
+//         const dataNew = JSON.parse(storedDataNE);
+
+//         // Populate lists for the popup
+//         createModelListItems(dataNew.userFiles, 'userModelListPopup');
+//         createModelListItems(dataNew.defaultFiles, 'defaultModelListPopup');
+
+//         // Set the JSON response in session storage
+//         sessionStorage.setItem('responseData', JSON.stringify(resp));
+
+//         // Clear existing content in the lists
+//         clearList('defaultList');
+//         clearList('userList');
+
+//         // Retrieve the data from session storage
+//         const storedData = sessionStorage.getItem('responseData');
+//         const data = JSON.parse(storedData);
+
+//         // You can use the 'data' variable as needed in your script
+//         // For example, populate lists using the createListItems function
+//         createListItems(data.defaultFiles, 'defaultList');
+//         createListItems(data.userFiles, 'userList');
+
+//         function createListItems(files, listId) {
+//             const list = document.getElementById(listId);
+
+//             // Check if the files array is empty
+//             if (files?.length === 0) {
+//                 const listItem = document.createElement('li');
+//                 const anchor = document.createElement('a');
+//                 anchor.href = '#';  // You can set the href as needed
+//                 anchor.textContent = 'No user models available';
+//                 listItem.appendChild(anchor);
+//                 list.appendChild(listItem);
+//                 return;
+//             }
+
+//             const items = files?.map(file => {
+//                 const listItem = document.createElement('li');
+//                 const anchor = document.createElement('a');
+//                 anchor.href = '#';  // You can set the href as needed
+//                 anchor.textContent = file.filename;
+//                 anchor.onclick = () => handleClick(listId === 'userList' ? file.path + '/weights/best.pt' : file.path);
+//                 listItem.appendChild(anchor);
+//                 return listItem;
+//             });
+
+//             list.append(...items);
+//         }
+//     }
+// }
+// function createModelListItems(files, listId) {
+//     const list = document.getElementById(listId);
+
+//     if (files?.length === 0) {
+//         const listItem = document.createElement('li');
+//         listItem.textContent = 'No models available';
+//         listItem.className = 'model-list-item'; // Apply CSS class
+//         applyStylesToListItem(listItem); // Apply CSS styles
+//         list.appendChild(listItem);
+//         return;
+//     }
+
+//     const items = files?.map(file => {
+//         const listItem = document.createElement('li');
+//         applyStylesToListItem(listItem); // Apply CSS styles to li
+//         listItem.className = 'model-list-item'; // Apply CSS class
+
+//         const anchor = document.createElement('a');
+//         anchor.href = '#';
+//         anchor.textContent = file.filename;
+//         anchor.style.color = 'black'
+//         anchor.style.textDecoration = 'none'; // Remove text decoration
+//         anchor.onclick = () => handleModelClick(listId === 'userModelListPopup' ? file.path + '/weights/best.pt' : file.path);
+
+//         listItem.appendChild(anchor);
+//         return listItem;
+//     });
+
+//     list.append(...items);
+// }
+
+// function applyStylesToListItem(listItem) {
+//     listItem.style.listStyleType = 'none'; // Set list style type to none
+//     listItem.style.margin = '5px'; // Example: Set margin
+//     listItem.style.padding = '3px'; // Example: Set padding
+// }
+
+// function clearModelList(listId) {
+//     const list = document.getElementById(listId);
+//     while (list.firstChild) {
+//         list.removeChild(list.firstChild);
+//     }
+// }
+
+// // Function to clear list content
+// function clearList(listId) {
+//     const list = document.getElementById(listId);
+//     while (list.firstChild) {
+//         list.removeChild(list.firstChild);
+//     }
+// }
+
 
 
 async function fetchData() {
@@ -86,98 +212,85 @@ async function fetchData() {
         // Clear existing content in the lists
         clearModelList('userModelListPopup');
         clearModelList('defaultModelListPopup');
-
-        // Retrieve the data from session storage
-        const storedDataNE = sessionStorage.getItem('modelResponseData');
-        const dataNew = JSON.parse(storedDataNE);
-
-        // Populate lists for the popup
-        createModelListItems(dataNew.userFiles, 'userModelListPopup');
-        createModelListItems(dataNew.defaultFiles, 'defaultModelListPopup');
-
-        // Set the JSON response in session storage
-        sessionStorage.setItem('responseData', JSON.stringify(resp));
-
-        // Clear existing content in the lists
+        clearModelList('userModelListSegPopup');
+        clearModelList('defaultModelListSegPopup');
         clearList('defaultList');
         clearList('userList');
+        clearList('defaultListSeg');
+        clearList('userListSeg');
 
         // Retrieve the data from session storage
-        const storedData = sessionStorage.getItem('responseData');
-        const data = JSON.parse(storedData);
+        const data = JSON.parse(sessionStorage.getItem('modelResponseData'));
 
-        // Now, 'data' contains the JSON response
-        // console.log('Data:', data);
-        // console.log(data);
+        // Populate lists for the popup and the main lists
+        createModelListItems(data.dection.defaultFiles, 'defaultModelListPopup' );
+        createModelListItems(data.dection.userFiles, 'userModelListPopup' );
 
-        // You can use the 'data' variable as needed in your script
-        // For example, populate lists using the createListItems function
-        createListItems(data.defaultFiles, 'defaultList');
-        createListItems(data.userFiles, 'userList');
+        createModelListItems(data.segment.defaultFiles, 'defaultModelListSegPopup');
+        createModelListItems(data.segment.userFiles, 'userModelListSegPopup');
 
-        function createListItems(files, listId) {
-            const list = document.getElementById(listId);
+        createListItems(data.dection.defaultFiles, 'defaultList');
+        createListItems(data.dection.userFiles, 'userList');
 
-            // Check if the files array is empty
-            if (files?.length === 0) {
-                const listItem = document.createElement('li');
-                const anchor = document.createElement('a');
-                anchor.href = '#';  // You can set the href as needed
-                anchor.textContent = 'No user models available';
-                listItem.appendChild(anchor);
-                list.appendChild(listItem);
-                return;
-            }
-
-            const items = files?.map(file => {
-                const listItem = document.createElement('li');
-                const anchor = document.createElement('a');
-                anchor.href = '#';  // You can set the href as needed
-                anchor.textContent = file.filename;
-                anchor.onclick = () => handleClick(listId === 'userList' ? file.path + '/weights/best.pt' : file.path);
-                listItem.appendChild(anchor);
-                return listItem;
-            });
-
-            list.append(...items);
-        }
+        createListItems(data.segment.defaultFiles, 'defaultListSeg');
+        createListItems(data.segment.userFiles, 'userListSeg');
     }
 }
+
 function createModelListItems(files, listId) {
     const list = document.getElementById(listId);
 
-    if (files?.length === 0) {
+    if (!files || files.length === 0) {
         const listItem = document.createElement('li');
         listItem.textContent = 'No models available';
-        listItem.className = 'model-list-item'; // Apply CSS class
-        applyStylesToListItem(listItem); // Apply CSS styles
+        listItem.className = 'model-list-item';
+        applyStylesToListItem(listItem);
         list.appendChild(listItem);
         return;
     }
 
-    const items = files?.map(file => {
+    files.forEach(file => {
         const listItem = document.createElement('li');
-        applyStylesToListItem(listItem); // Apply CSS styles to li
-        listItem.className = 'model-list-item'; // Apply CSS class
+        applyStylesToListItem(listItem);
+        listItem.className = 'model-list-item';
 
         const anchor = document.createElement('a');
         anchor.href = '#';
         anchor.textContent = file.filename;
-        anchor.style.color = 'black'
-        anchor.style.textDecoration = 'none'; // Remove text decoration
-        anchor.onclick = () => handleModelClick(listId === 'userModelListPopup' ? file.path + '/weights/best.pt' : file.path);
+        anchor.style.color = 'black';
+        anchor.style.textDecoration = 'none';
+        anchor.onclick = () => handleModelClick(listId === 'userModelListPopup' || listId === 'userModelListSegPopup' ? file.path + '/weights/best.pt' : file.path);
 
         listItem.appendChild(anchor);
-        return listItem;
+        list.appendChild(listItem);
     });
+}
 
-    list.append(...items);
+function createListItems(files, listId) {
+    const list = document.getElementById(listId);
+
+    if (!files || files.length === 0) {
+        const listItem = document.createElement('li');
+        listItem.textContent = 'No files available';
+        list.appendChild(listItem);
+        return;
+    }
+
+    files.forEach(file => {
+        const listItem = document.createElement('li');
+        const anchor = document.createElement('a');
+        anchor.href = '#';
+        anchor.textContent = file.filename;
+        anchor.onclick = () => handleClick(listId === 'userList' || listId === 'userListSeg' ? file.path + '/weights/best.pt' : file.path);
+        listItem.appendChild(anchor);
+        list.appendChild(listItem);
+    });
 }
 
 function applyStylesToListItem(listItem) {
-    listItem.style.listStyleType = 'none'; // Set list style type to none
-    listItem.style.margin = '5px'; // Example: Set margin
-    listItem.style.padding = '3px'; // Example: Set padding
+    listItem.style.listStyleType = 'none';
+    listItem.style.margin = '5px';
+    listItem.style.padding = '3px';
 }
 
 function clearModelList(listId) {
@@ -187,7 +300,6 @@ function clearModelList(listId) {
     }
 }
 
-// Function to clear list content
 function clearList(listId) {
     const list = document.getElementById(listId);
     while (list.firstChild) {
@@ -195,8 +307,7 @@ function clearList(listId) {
     }
 }
 
-
-// Function to handle click events
+// // Function to handle click events
 function handleClick(url) {
     if (!url) {
         alert('You dont have any model stored!');
@@ -207,6 +318,7 @@ function handleClick(url) {
     }
 
 }
+
 
 // Function to check login status and update local storage every 3 seconds
 const checkAndUpdateLoginStatus = async () => {
@@ -224,6 +336,9 @@ const checkAndUpdateLoginStatus = async () => {
         fetchData(loginStatus.user._id);
         document.getElementById('userShape').style.display = 'block';
         document.getElementById('userModel').style.display = 'block';
+
+        document.getElementById('userShapeSeg').style.display = 'block';
+        document.getElementById('userModelSeg').style.display = 'block';
 
         // Get references to the userName and userImage elements
         const userNameElement = document.getElementById('userNames');
@@ -489,6 +604,11 @@ function closeModelPopup() {
     loadingSpinner.style.display = 'none';
     menubars.style.display = 'flex';
     tiles = [];  // Global variable
+    document.getElementById('ObjectDiction').style.display = 'none';
+    document.getElementById('InstanceSegmentObject').style.display = 'none';
+    // Reset the background color of both buttons to 'inherit'
+    document.querySelector('.tablinks:nth-child(1)').style.backgroundColor = 'inherit';
+    document.querySelector('.tablinks:nth-child(2)').style.backgroundColor = 'inherit';
 }
 
 var polygonGeoJSON; // Global variable to store the drawn polygon's GeoJSON
@@ -500,7 +620,7 @@ function clearIcons() {
 }
 
 map.on('draw:created', function (event) {
-    if(lastDrawnPolygon){
+    if (lastDrawnPolygon) {
         removeLastDrawnPolygon();
         clearIcons();
     }
@@ -650,8 +770,8 @@ function handleModelClick(filePath) {
             if (element) {
                 element.style.display = 'block';
             }
-            
-           
+
+
         })
         .catch(error => {
 
@@ -1072,7 +1192,13 @@ function afterExport(result) {
     return result;
 }
 
-
+async function saveImageSkipTest(){
+    document.getElementById('training_btn').style.display = 'none';
+   
+    document.getElementById('tainImage').style.display = 'block';
+    document.getElementById('valImage').style.display = 'none';
+    document.getElementById('testImage').style.display = 'none';
+}
 
 async function saveImageUploadTest() {
     await CreateFolder();
@@ -1332,7 +1458,7 @@ async function saveImageUploadVal() {
             };
 
             const imageFileExtension = imageFile.name.match(/\.[^/.]+$/)[0];
-            xhr.open('POST', `/upload?imageName=${imageFileExtension}&type=valid&userId=${jsonDataString ? jsonDataString.user._id : ''}`, true);
+            xhr.open('POST', `/upload?imageName=${imageFileExtension}&type=val&userId=${jsonDataString ? jsonDataString.user._id : ''}`, true);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(JSON.stringify(data));
         }
@@ -1643,3 +1769,78 @@ function downloadShapefile() {
             console.error('Request error:', error);
         });
 }
+
+// function downloadSample() {
+//     const jsonDataString = JSON.parse(localStorage.getItem('user'));
+//     // Send an HTTP request to the server to generate the shapefile.
+//     fetch(`/generate-samplefile?userId=${jsonDataString ? jsonDataString.user._id : ''}`, {
+//         method: 'POST',
+//     })
+//         .then(response => {
+//             if (response.ok) {
+//                 // The server successfully generated the shapefile.
+//                 return response.blob(); // Convert response to a Blob
+//             } else {
+//                 // Handle errors.
+//                 console.error('Failed to download sample dataset');
+//                 throw new Error('Failed to download sample dataset.'); // Propagate the error
+//             }
+//         })
+//         .then(blob => {
+//             // Create a download link
+//             const url = URL.createObjectURL(blob);
+//             const a = document.createElement('a');
+//             a.href = url;
+//             a.download = 'sample.zip'; // Set the desired file name
+//             document.body.appendChild(a); // Append the link to the document
+//             a.click(); // Simulate a click on the link to trigger the download
+//             document.body.removeChild(a); // Remove the link from the document
+//             console.log('Download initiated successfully.');
+//         })
+//         .catch(error => {
+//             // Handle network or other errors.
+//             console.error('Request error:', error);
+//         });
+// }
+
+function downloadSample() {
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+    console.log('Starting download...');
+
+    fetch(`/generate-samplefile?userId=${jsonDataString ? jsonDataString.user._id : ''}`, {
+        method: 'POST',
+    })
+        .then(response => {
+            if (response.ok) {
+                return response.blob(); // Convert response to a Blob
+            } else {
+                console.error('Failed to download sample dataset');
+                throw new Error('Failed to download sample dataset.'); // Propagate the error
+            }
+        })
+        .then(blob => {
+            if (blob.size > 0) {
+                // Create a download link
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'sample.zip'; // Set the desired file name
+                document.body.appendChild(a); // Append the link to the document
+                a.click(); // Simulate a click on the link to trigger the download
+                document.body.removeChild(a); // Remove the link from the document
+                URL.revokeObjectURL(url); // Clean up the Blob URL
+                console.log('Download initiated successfully.');
+            } else {
+                console.error('Received an empty file.');
+                // Handle the case of an empty file here
+            }
+        })
+        .catch(error => {
+            console.error('Request error:', error);
+        })
+        .finally(() => {
+            console.log('Download process completed.'); // End loading indicator
+        });
+}
+
+

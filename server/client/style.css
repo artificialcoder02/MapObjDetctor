@@ -533,14 +533,12 @@ nav{
 }
 nav .wrapper{
   position: relative;
-  max-width: 1300px;
-  padding: 0px 30px;
   height: 70px;
+  width: 100% !important;
   line-height: 70px;
-  margin: auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 .wrapper .logo a{
   color: #f2f2f2;

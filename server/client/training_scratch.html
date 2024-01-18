@@ -112,7 +112,14 @@
 <body>
     <div class="container">
         <h1>YOLOv8 - Training from Scratch</h1>
-        <form id="trainingForm">
+        <form id="trainingForm" style="margin-top: 20px;">
+            <!-- Add Object Detection Type Dropdown -->
+            <label for="objectDetectionType">Choose Object Detection Type:</label>
+            <select id="objectDetectionType">
+                <option value="detect">Detect</option>
+                <option value="segment">Segment</option>
+            </select>
+
             <!-- Basic Training Fields -->
             <label for="Enter the your name">Name:</label>
             <input type="text" id="name" name="name" required>
@@ -330,6 +337,9 @@
                 formData.append(input.id.replace("Input", ""), input.value);
             });
 
+            // Include the selected object detection type in the script
+            var objectDetectionType = document.getElementById("objectDetectionType").value;
+
             // Convert FormData to a plain object
             var formObject = {};
             formData.forEach(function (value, key) {
@@ -337,8 +347,9 @@
             });
 
             // Create the script string
-            var script = "yolo detect train";
+            var script = "yolo " + objectDetectionType + " train"; // Updated script
 
+           
             // Add parameters with non-empty values to the script
             for (var key in formObject) {
                 if (formObject[key] !== "") {
