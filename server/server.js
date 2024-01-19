@@ -30,6 +30,47 @@ app.use(cors({
 }));
 
 
+
+
+
+const runsFolder = path.join(__dirname, 'runs');
+// Check if the directory exists
+if (!fs.existsSync(runsFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(runsFolder);
+}
+
+const detectFolder = path.join(__dirname, 'runs', 'detect');
+// Check if the directory exists
+if (!fs.existsSync(detectFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(detectFolder);
+}
+
+const geotFolder = path.join(__dirname, 'geot');
+// Check if the directory exists
+if (!fs.existsSync(geotFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(geotFolder);
+}
+
+const geojFolder = path.join(__dirname, 'geoj');
+// Check if the directory exists
+if (!fs.existsSync(geojFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(geojFolder);
+}
+
+
+const modelSegFolder = path.join(__dirname, 'model-seg');
+// Check if the directory exists
+if (!fs.existsSync(modelSegFolder)) {
+    // If it doesn't exist, create it
+    fs.mkdirSync(modelSegFolder);
+}
+
+
+
 const fileSystem = require('fs').promises; // Use a different variable name for the fs module
 
 // Scheduled task to check and clear old user folders
@@ -897,6 +938,57 @@ function runObjectDetection(geoTiffDirectory, modelPath, outputFolder, callback)
         callback();
     });
 }
+
+const batchScript = `@echo off
+set HOST=http://localhost:9001
+set PYTHONUTF8=1
+label-studio start --port 9001
+`;
+
+const filePath = path.join(__dirname, 'run-label-studio.bat');
+
+// Create batch file if it doesn't exist
+if (fs.existsSync(filePath)) {
+    // console.log('run-label-studio.bat already exists.');
+} else {
+    fs.writeFile(filePath, batchScript, (err) => {
+        if (err) {
+            console.error('Error creating batch script:', err);
+        } else {
+            // console.log('run-label-studio.bat has been created successfully.');
+        }
+    });
+}
+
+app.get('/runcmd', (req, res) => {
+    const batchScriptPath = path.join(__dirname, 'run-label-studio.bat');
+
+    exec(batchScriptPath, (error) => {
+        if (error) {
+            console.error(`Error: ${error.message}`);
+            return res.status(500).json({ error: error.message });
+        }
+    });
+
+     // Function to check if Label Studio is up
+     function checkLabelStudio() {
+        // console.log('Checking if Label Studio is up...');
+        axios.get('http://127.0.0.1:9001')
+            .then(response => {
+                if (response.status === 200) {
+                    res.status(200).json({ message: 'Label Studio started successfully.' });
+                } else {
+                    setTimeout(checkLabelStudio, 1000); // check again in 1 second
+                }
+            })
+            .catch(err => {
+                // console.log('Error or Label Studio is not ready yet:', err.message);
+                setTimeout(checkLabelStudio, 1000); // check again in 1 second
+            });
+    }
+
+    checkLabelStudio(); // Start checking after initiating batch file execution
+});
 
 
 app.listen(3000, () => {
