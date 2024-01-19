@@ -61,4 +61,4 @@ yarn-error.log*
 ../node_modules
 /server/node_modules
 /server/yolov5
-
+*.bat
