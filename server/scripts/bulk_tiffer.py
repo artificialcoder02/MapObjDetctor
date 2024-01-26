@@ -41,10 +41,18 @@ def run_inference(model_path, source_directory):
                         x1, y1, x2, y2 = box.get("x1"), box.get("y1"), box.get("x2"), box.get("y2")
                         lat1, lon1 = pixel_to_latlng(x1, y1, src)
                         lat2, lon2 = pixel_to_latlng(x2, y2, src)
-                        item["lat1"] = lat1
-                        item["lng1"] = lon1
-                        item["lat2"] = lat2
-                        item["lng2"] = lon2
+                        item["lat1"], item["lng1"], item["lat2"], item["lng2"] = lat1, lon1, lat2, lon2
+
+                        # Handle segmentation
+                        if 'segments' in item:
+                            masks = item["segments"]
+                            x, y = masks.get("x"), masks.get("y")
+                            segment_coords = []
+                            for px, py in zip(map(int, x), map(int, y)):
+                                mlat, mlon = pixel_to_latlng(px, py, src)
+                                segment_coords.append((mlat, mlon))
+                            item["segment_coords"] = segment_coords
+                        
                         all_detections.append(item)
     return all_detections
 
@@ -57,29 +65,38 @@ def detections_to_geojson(detections, output_folder):
     used_colors = set()
 
     for item in detections:
-        lat1, lng1, lat2, lng2 = item['lat1'], item['lng1'], item['lat2'], item['lng2']
-        coordinates = [(lng1, lat1), (lng1, lat2), (lng2, lat2), (lng2, lat1), (lng1, lat1)]
-
-        # Assign or generate a unique color for the class
-        if item["class"] not in class_color_mapping:
+        color = class_color_mapping.get(item["class"])
+        if color is None:
             color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
             while color in used_colors:
                 color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
             used_colors.add(color)
             class_color_mapping[item["class"]] = color
-        else:
-            color = class_color_mapping[item["class"]]
 
-        feature = geojson.Feature(
-            geometry=geojson.Polygon([coordinates]),
-            properties={
-                "name": item["name"],
-                "class": item["class"],
-                "confidence": item["confidence"],
-                "color": color
-            }
-        )
-        features.append(feature)
+        properties = {
+            "name": item["name"],
+            "class": item["class"],
+            "confidence": item["confidence"],
+            "color": color
+        }
+
+        if 'segment_coords' in item:
+            segment_polygon = [(lon, lat) for lat, lon in item['segment_coords']]
+            segment_polygon.append(segment_polygon[0]) # Close the polygon
+            segment_feature = geojson.Feature(
+                geometry=geojson.Polygon([segment_polygon]),
+                properties={"type": "Segmentation", **properties}
+            )
+            features.append(segment_feature)
+        elif 'lat1' in item and 'lng1' in item and 'lat2' in item and 'lng2' in item:
+            coordinates = [(item['lng1'], item['lat1']), (item['lng1'], item['lat2']), 
+                           (item['lng2'], item['lat2']), (item['lng2'], item['lat1']), 
+                           (item['lng1'], item['lat1'])] # Close the polygon
+            bbox_feature = geojson.Feature(
+                geometry=geojson.Polygon([coordinates]),
+                properties={"type": "Bbox", **properties}
+            )
+            features.append(bbox_feature)
 
     feature_collection = geojson.FeatureCollection(features)
     with open(output_filename, "w") as geojson_file:

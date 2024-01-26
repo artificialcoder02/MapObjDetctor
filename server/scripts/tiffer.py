@@ -53,15 +53,36 @@ def run_inference(model_path, source_image):
                 y1 = box.get("y1")
                 x2 = box.get("x2")
                 y2 = box.get("y2")
+                #Handle segmentation 
+                if (item.get('segments') is not None ):
+                    masks = item.get("segments")
+                    x = masks.get("x")
+                    y = masks.get("y")
+                    segment_coords = []
+                    
+                    # Convert to integer and iterate over each point in the segment
+                    for px, py in zip(map(int, x), map(int, y)):
+                        mlat, mlon = pixel_to_latlng(px, py, src)
+                        segment_coords.append((mlat, mlon))
+                    
+                    # Store the converted segment coordinates
+                    item["segment_coords"] = segment_coords
 
+                    
+                    ''' mcx , mcy = pixel_to_latlng (x , y , src)
+                    item["mx"] = mcx
+                    item["my"] = mcy  '''
+            
                 # Convert pixel coordinates to latitude and longitude
                 lat1, lon1 = pixel_to_latlng(x1, y1, src)
                 lat2, lon2 = pixel_to_latlng(x2, y2, src)
+                
 
                 item["lat1"] = lat1
                 item["lng1"] = lon1
                 item["lat2"] = lat2
                 item["lng2"] = lon2
+                
                 detections.append(item)
 
     return detections
@@ -76,16 +97,6 @@ def detections_to_geojson(input_json, output_folder):
     class_color_mapping = {}
 
     for item in input_json:
-        lat1, lng1, lat2, lng2 = item['lat1'], item['lng1'], item['lat2'], item['lng2']
-
-        # Ensure coordinates are in the correct order (longitude, latitude)
-        coordinates = [
-            (lng1, lat1),
-            (lng1, lat2),
-            (lng2, lat2),
-            (lng2, lat1),
-            (lng1, lat1)  # Close the polygon
-        ]
 
         # Get the color based on the class from the mapping dictionary
         color = class_color_mapping.get(item["class"])
@@ -97,16 +108,47 @@ def detections_to_geojson(input_json, output_folder):
             # Store the color in the mapping dictionary for future use
             class_color_mapping[item["class"]] = color
 
-        feature = geojson.Feature(
-            geometry=geojson.Polygon([coordinates]),
             properties={
                 "name": item["name"],
                 "class": item["class"],
                 "confidence": item["confidence"],
                 "color": color  # Include color information
             }
-        )
-        features.append(feature)
+        
+        #Process Instance Segmentation 
+        if 'segment_coords' in item:
+            segment_polygon = [(lon, lat) for lat, lon in item['segment_coords']]
+            segment_polygon.append(segment_polygon[0])  # Ensure the polygon is closed
+
+            segment_feature = geojson.Feature(
+                geometry=geojson.Polygon([segment_polygon]),
+                properties={"type": "Segmentation", **properties}
+            )
+            features.append(segment_feature)
+        
+        # Process bounding box
+        elif 'lat1' in item and 'lng1' in item and 'lat2' in item and 'lng2' in item:
+
+            lat1, lng1, lat2, lng2 = item['lat1'], item['lng1'], item['lat2'], item['lng2']
+        
+            # Ensure coordinates are in the correct order (longitude, latitude)
+            coordinates = [
+                (lng1, lat1),
+                (lng1, lat2),
+                (lng2, lat2),
+                (lng2, lat1),
+                (lng1, lat1),
+                # Close the polygon
+            ]
+
+            feature = geojson.Feature(
+            geometry=geojson.Polygon([coordinates]),
+            properties={"type": "Bbox", **properties}
+            )
+
+            features.append(feature)
+        
+        
 
     feature_collection = geojson.FeatureCollection(features)
 

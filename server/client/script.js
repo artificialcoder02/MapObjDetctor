@@ -436,16 +436,86 @@ var map = L.map('map', {
 }).setView(centerPoint, 18);
 
 
+
 // Create and add the tile layer
-const tileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    crs: L.CRS.EPSG4326,
-    maxZoom: 20,
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-}).addTo(map);
+// const tileLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+//     crs: L.CRS.EPSG4326,
+//     maxZoom: 20,
+//     subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+// }).addTo(map);
+
+// var baselayers = {
+//     "Tile Layer 1": L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+//         crs: L.CRS.EPSG4326,
+//         maxZoom: 20,
+//         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+//     }),
+//     "Tile Layer 2": L.esri.basemapLayer('Imagery'),
+//     "Tile Layer 3": L.esri.basemapLayer('ImageryLabels')
+// };
+
+// var overlays = {};
+
+// L.control.layers(baselayers, overlays).addTo(map);
+
+// baselayers["Tile Layer 1"].addTo(map);
 
 // const tileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png',{ zIndex: -1,
 // maxZoom:19 }).addTo(map);
 
+var layer1 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png').addTo(map);
+var layer2 = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            crs: L.CRS.EPSG4326,
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        
+        
+        var layerControl = L.Control.extend({
+            options: {
+                position: 'topright'
+            },
+        
+            onAdd: function (map) {
+                var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                var select = L.DomUtil.create('select', 'layer-select', container);
+        
+                var option1 = L.DomUtil.create('option', '', select);
+                option1.value = 'layer1';
+                option1.innerHTML = 'ESRI ARGIS SATELITE';
+        
+                var option2 = L.DomUtil.create('option', '', select);
+                option2.value = 'layer2';
+                option2.innerHTML = 'GOOGLE MAPS SATELITE';
+        
+                // Add more options for more layers
+        
+                select.onchange = function(e){
+                    map.eachLayer(function(layer){
+                        if(layer instanceof L.TileLayer){
+                            map.removeLayer(layer);
+                        }
+                    });
+        
+                    switch (e.target.value) {
+                        case 'layer1':
+                            map.addLayer(layer1);
+                            break;
+                        case 'layer2':
+                            map.addLayer(layer2);
+                            break;
+                        // Add more cases for more layers
+                    }
+                }
+        
+                return container;
+            }
+        });
+        
+        map.addControl(new layerControl());
+        
+        
 
 
 L.control.scale().addTo(map);
@@ -537,7 +607,7 @@ function handleDrawCreated(e) {
     const bounds = layer.getBounds();
 
     // Define the zoom level to fetch tiles for
-    const zoom = 19; // Replace with the desired zoom level
+    const zoom = 17; // Replace with the desired zoom level
 
     // Fetch tiles for the specified area and zoom level
     const tiles = getTilesForBounds(bounds, zoom);

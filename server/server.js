@@ -854,7 +854,6 @@ app.post('/download-tiles', async (req, res) => {
             // Convert to GeoTIFF
             convertToGeoTIFF(tilePath, geotiffPath, bounds);
         }
-
         //     res.send({ message: 'Tiles downloaded and converted successfully' });
         // } catch (error) {
         //     console.error(error);
