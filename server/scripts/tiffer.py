@@ -45,6 +45,35 @@ def run_inference(model_path, source_image):
         detections = []
 
         for result in results:
+            
+            # Check and handle OBB first
+            obb = getattr(result, 'obb', None)
+            if obb is not None:
+                all_obb_coords = obb.xyxyxyxy.cpu().numpy().tolist()
+                class_labels = obb.cls.cpu().numpy().tolist() 
+                for obb_coords in all_obb_coords:
+                    geo_coords = []
+                    for x, y in obb_coords:
+                        lat, lon = pixel_to_latlng(int(x), int(y), src)
+                        geo_coords.append((lon, lat))  # Longitude, Latitude order
+                    
+                    class_names = []
+                    for key in result.names:
+                        if key in class_labels:
+                            class_names.append(result.names[key])
+                                                            
+                    #class_names = [result.names.get(cls_id, "Unknown") for cls_id in class_labels]
+                    obb_detection = {
+                        "coordinates": geo_coords,  # Coordinates for this specific OBB
+                        "confidence": obb.conf.tolist(),
+                        "class_label": obb.cls.tolist(),
+                        "class_names": class_names
+                    }
+                    detections.append(obb_detection)
+                
+                continue  
+            
+
             pre = json.loads(result.tojson())
 
             for item in pre:
@@ -95,30 +124,67 @@ def detections_to_geojson(input_json, output_folder):
 
     # Use a dictionary to store dynamically assigned colors for each class
     class_color_mapping = {}
+    used_colors = set()
 
     for item in input_json:
+        # Determine the class_key based on the detection type
+        if 'class_names' in item:
+            class_key = item["class_names"][0] if item["class_names"] else "Unknown"  # First class name or "Unknown"
+        else:
+            class_key = item.get("class", "Unknown")
 
-        # Get the color based on the class from the mapping dictionary
-        color = class_color_mapping.get(item["class"])
-
-        # If the class doesn't have a color, generate a random color
+        # Assign color based on class_key
+        color = class_color_mapping.get(class_key)
         if color is None:
-            color = "#{:06x}".format(random.randint(0, 0xFFFFFF))  # Random hex color
+            color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+            while color in used_colors:
+                color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+            used_colors.add(color)
+            class_color_mapping[class_key] = color
 
-            # Store the color in the mapping dictionary for future use
-            class_color_mapping[item["class"]] = color
-
-            properties={
-                "name": item["name"],
-                "class": item["class"],
-                "confidence": item["confidence"],
-                "color": color  # Include color information
+        # Set up properties based on detection type
+        if 'class_names' in item:  # For OBB detections
+            properties = {
+                "name": class_key,
+                "confidence": item.get("confidence"),
+                "color": color
             }
+        else:  # For other detections (segmentations and bounding boxes)
+            properties = {
+                "name": item.get("name", "Unknown"),
+                "class": class_key,  # Use class_key here for consistency
+                "confidence": item.get("confidence"),
+                "color": color
+            }
+
+        
+        # Process OBB
+        if 'coordinates' in item:
+            obb_coords = item['coordinates']
+            # Ensure the OBB polygon is closed
+            if obb_coords and len(obb_coords) > 2:
+                if obb_coords[0] != obb_coords[-1]:
+                    obb_coords.append(obb_coords[0])
+
+                # Properties specific to OBB
+                obb_properties = {
+                    "type": "OBB",
+                    "confidence": item.get("confidence"),
+                    "class_names": item.get("class_names", ["Unknown"]),
+                    **properties  # Add common properties
+                }
+
+                obb_feature = geojson.Feature(
+                geometry=geojson.Polygon([obb_coords]),
+                properties={"type": "OBB", **properties}
+                )
+                features.append(obb_feature)
         
         #Process Instance Segmentation 
-        if 'segment_coords' in item:
+        elif 'segment_coords' in item:
             segment_polygon = [(lon, lat) for lat, lon in item['segment_coords']]
-            segment_polygon.append(segment_polygon[0])  # Ensure the polygon is closed
+            if segment_polygon:
+                segment_polygon.append(segment_polygon[0]) # Ensure the polygon is closed
 
             segment_feature = geojson.Feature(
                 geometry=geojson.Polygon([segment_polygon]),

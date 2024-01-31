@@ -607,7 +607,7 @@ function handleDrawCreated(e) {
     const bounds = layer.getBounds();
 
     // Define the zoom level to fetch tiles for
-    const zoom = 17; // Replace with the desired zoom level
+    const zoom = 18; // Replace with the desired zoom level
 
     // Fetch tiles for the specified area and zoom level
     const tiles = getTilesForBounds(bounds, zoom);
@@ -700,7 +700,7 @@ map.on('draw:created', function (event) {
 
     if (layer instanceof L.Polygon) {
         var bounds = layer.getBounds();
-        map.fitBounds(bounds, { maxZoom: 18 });
+        map.fitBounds(bounds, { maxZoom: 19 });
 
         var latlngs = layer.getLatLngs()[0]; // Assuming it's a simple polygon
         // Convert Leaflet LatLngs to GeoJSON Polygon
@@ -710,7 +710,7 @@ map.on('draw:created', function (event) {
         coordinates.push(coordinates[0]); // Close the polygon
 
         polygonGeoJSON = turf.polygon([coordinates]);
-        getTileUrls(bounds, 18, polygonGeoJSON);
+        getTileUrls(bounds, 19, polygonGeoJSON);
         lastDrawnPolygon = layer;
 
     }
