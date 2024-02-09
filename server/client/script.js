@@ -920,7 +920,7 @@ function downloadMap() {
                 // Handle the received data
                 console.log(data.geojson);
                 var myLayer = L.geoJSON(data.geojson, {
-                    crs: L.CRS.EPSG4326,
+                    //crs: L.CRS.EPSG4326,
                     //crs:L.CRS.EPSG3857,
                     style: function (feature) {
                         return {

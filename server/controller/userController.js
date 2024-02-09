@@ -257,10 +257,12 @@ const UserController = {
 
                 // Create additional subdirectories for 'images' and 'labels' within 'annotations'
                 if (subDir === 'annotations1') {
-                    const annotationsSubDirs = ['images', 'labels'];
+                    const annotationsSubDirs = ['train', 'val'];
+                    const img_labeldir = ['images','labels']
 
                     for (const annotationSubDir of annotationsSubDirs) {
                         await fs.mkdir(path.join(currentTrainingSubDir, annotationSubDir), { recursive: true });
+                        await fs.mkdir(path.join(currentTrainingSubDir, annotationSubDir, img_labeldir), { recursive: true });
                     }
                 } else {
                     await fs.mkdir(currentTrainingSubDir, { recursive: true });
