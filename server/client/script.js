@@ -212,10 +212,13 @@ async function fetchData() {
         // Clear existing content in the lists
         clearModelList('userModelListPopup');
         clearModelList('defaultModelListPopup');
+
         clearModelList('userModelListSegPopup');
         clearModelList('defaultModelListSegPopup');
+
         clearList('defaultList');
         clearList('userList');
+
         clearList('defaultListSeg');
         clearList('userListSeg');
 
@@ -855,6 +858,72 @@ function handleModelClick(filePath) {
         });
 }
 
+
+function uploadFile() {
+    const jsonDataString = JSON.parse(localStorage.getItem('user'));
+    const form = document.getElementById('uploadForm');
+    var selectedModel = document.getElementById("models").value;
+    const formData = new FormData(form);
+    // Append the selectedModel as modelPath to the formData
+    formData.append('modelPath', selectedModel);
+      // Clear existing layers
+      map.eachLayer(l => {
+        if (l instanceof L.GeoJSON) {
+            map.removeLayer(l);
+        }
+    });
+
+
+    loadingSpinner.style.display = 'block';
+    menubars.style.display = 'none';
+
+    document.getElementById('customPopup').style.display = 'none';
+    fetch(`/upload-tif?userId=${jsonDataString ? jsonDataString.user._id : ''}`, {
+        method: 'POST',
+        body: formData,
+    })
+        .then(response => response.json())
+        .then(data => {
+            
+           // Handle the received data
+           console.log(data.geojson);
+           var myLayer = L.geoJSON(data.geojson, {
+             
+               style: function (feature) {
+                   return {
+                       color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
+                       weight: 2,
+                       opacity: 1
+                   };
+               }
+           }).addTo(map);
+
+           var myLayer = L.geoJSON(data.geojson, {
+               crs: L.CRS.EPSG4326,
+               //crs:L.CRS.EPSG3857,
+               style: function (feature) {
+                   return {
+                       color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
+                       weight: 2,
+                       opacity: 1
+                   };
+               }
+           }).addTo(map);
+
+           const classes = extractDetectedClasses(data.geojson.features); // Use data.features
+           const color = extractDetectedColor(data.geojson.features); // Use data.features
+           const objectsPerClass = calculateObjectsPerClass(data.geojson.features);
+           const totalClasses = data.geojson.features.length;
+
+           // Update the content of the icons based on the detected classes
+           updateIconContentOnPage(classes, color, objectsPerClass, totalClasses);
+           loadingSpinner.style.display = 'none';
+           menubars.style.display = 'flex';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
 
 function downloadMap() {
     const jsonDataString = JSON.parse(localStorage.getItem('user'));

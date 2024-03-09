@@ -29,6 +29,46 @@ app.use(cors({
     credentials: true
 }));
 
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const { userId } = req.query;
+        const directory = userId ?
+            path.join(__dirname, 'userData', userId, 'detection', 'geot') :
+            path.join(__dirname, 'geot');
+
+        if (!fs.existsSync(directory)) {
+            fs.mkdirSync(directory, { recursive: true });
+        }
+
+        cb(null, directory);
+    },
+    filename: function (req, file, cb) {
+        const { userId } = req.query;
+        const directory = userId ?
+            path.join(__dirname, 'userData', userId, 'detection', 'geot') :
+            path.join(__dirname, 'geot');
+
+        fs.readdir(directory, (err, files) => {
+            if (err) {
+                console.error('Failed to read directory:', err);
+                return cb(err);
+            }
+
+            // Filter relevant files and extract numbers
+            const numbers = files
+                .filter(f => f.startsWith('uploaded-tif-') && f.endsWith('.tiff'))
+                .map(f => parseInt(f.replace('uploaded-tif-', '').replace('.tiff', ''), 10))
+                .filter(n => !isNaN(n));
+
+            const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+            const newFileName = `uploaded-tif-${maxNumber + 1}.tiff`;
+
+            cb(null, newFileName);
+        });
+    }
+});
+
+const upload = multer({ storage: storage });
 
 
 
@@ -255,6 +295,82 @@ app.get('/files', async (req, res) => {
 });
 
 
+app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
+    const geoTiffFilePath = req.file.path;
+    const userId = req.query.userId;
+    const modelPath = req.body.modelPath;
+    const directoryPath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
+
+    //console.log(path.join(__dirname));
+    if (geoTiffFilePath) {
+        const modelPathNew = path.join(__dirname, 'scripts', 'tiffer.py');
+        const userPath = path.join(__dirname, 'userData', `${userId}`);
+
+        if (userId) {
+            // Check if user directory exists
+            if (fs.existsSync(userPath)) {
+                process.chdir(userPath); // Change the current working directory to userPath
+            }
+        }
+     
+
+        console.log(`python ${modelPathNew} --model ${modelPath} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`);
+        exec(`python ${modelPathNew} --model ${modelPath} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing Script: ${stderr}`);
+                return res.status(500).json({ error: 'Error performing latlong conversion' }); ˀ
+            }
+            
+            // console.log(directoryPath);
+            // Read the directory
+            fs.readdir(directoryPath, (err, files) => {
+                
+                console.log(err);
+                if (err) {
+                    console.error('Error reading directory:', err);
+                    return res.status(500).json({ error: 'Error reading directory' });
+                } else {
+                    // Filter the files with the pattern "output_<number>.geojson"
+                    const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
+                    console.log(geojsonFiles);
+
+                    // Sort the files by the creation time
+                    geojsonFiles.sort((fileA, fileB) => {
+                        return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
+                    });
+
+                    // Get the latest file
+                    const latestFile = geojsonFiles[0];
+
+                    // Read the file and load the data into a variable
+                    fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
+                        console.log(err);
+
+                        if (err) {
+                            console.error('Error reading file:', err);
+                            return;
+                        } else {
+                            try {
+                                const jsonData = JSON.parse(data); // assuming the file contains JSON data
+                                // Use the jsonData variable as required/
+                                // console.log(jsonData);
+                                console.log('Loaded data:', jsonData);
+                                return res.status(200).json({ geojson: jsonData });
+                            } catch (error) {
+                                console.error('Error parsing JSON data:', error);
+                                return res.status(500).json({ error: 'Error parsing JSON data' });
+                            }
+                        }
+                    });
+                }
+            });
+            // Instead of reading the processed image from a file, you can directly convert it to base64
+        });
+        
+    }
+
+});
+
 
 app.post('/save-captured-image', (req, res) => {
     const { image, northWest, southEast, userId, modelPath } = req.body;
@@ -451,7 +567,6 @@ app.get('/get-recent-geojson', (req, res) => {
     res.json(recentGeoJSON);
 });
 
-
 app.post('/generate-shapefile', (req, res) => {
     const userId = req.query.userId;
 
@@ -503,7 +618,6 @@ app.post('/generate-shapefile', (req, res) => {
         }
     });
 });
-
 
 app.post('/generate-samplefile', (req, res) => {
     // const userId = req.query.userId; // Uncomment if user-specific logic is needed
@@ -602,7 +716,6 @@ app.get('/folder', (req, res) => {
     res.json({ newFolderPath: newFolderPath });
 });
 
-
 app.post('/upload', (req, res) => {
     const data = req.body; // Access JSON data from the request body
     let userId = req.query.userId;
@@ -665,7 +778,6 @@ app.post('/upload', (req, res) => {
     }
     res.send('Files saved successfully on the server.');
 });
-
 
 app.get('/training-from-scratch', (req, res) => {
     // Extract userId and script from query parameters
@@ -781,8 +893,6 @@ app.get('/training-from-scratch', (req, res) => {
 
 });
 
-
-
 // Function to calculate tile bounds
 function calculateBounds(x, y, zoom) {
     const tile2long = (x, z) => (x / Math.pow(2, z)) * 360 - 180;
@@ -816,7 +926,6 @@ function convertToGeoTIFF(inputFile, outputFile, bounds) {
         console.log(`stdout: ${stdout}`);
     });
 }
-
 
 app.post('/download-tiles', async (req, res) => {
     const tiles = req.body.tiles;
@@ -969,8 +1078,8 @@ app.get('/runcmd', (req, res) => {
         }
     });
 
-     // Function to check if Label Studio is up
-     function checkLabelStudio() {
+    // Function to check if Label Studio is up
+    function checkLabelStudio() {
         // console.log('Checking if Label Studio is up...');
         axios.get('http://127.0.0.1:9001')
             .then(response => {

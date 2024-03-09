@@ -192,6 +192,7 @@
                                     <li><a href="#" onclick="downloadShapefile()">Download Shapefile</a></li>
                                     <li><a href="#" onclick="downloadSample()">Download Sample Dataset</a></li>
                                     <li><a href="#" onclick="labelStodio()">Run Labeling Software</a></li>
+                                    <li><a href="#" onclick="openCustomPopUp()">Upload Custom Geotiff</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -220,6 +221,7 @@
                                     <li><a href="#" onclick="downloadShapefile()">Download Shapefile</a></li>
                                     <li><a href="#" onclick="downloadSample()">Download Sample Dataset</a></li>
                                     <li><a href="#" onclick="labelStodio()">Run Labeling Software</a></li>
+                                    <li><a href="#" onclick="openCustomPopUp()">Upload Custom Geotiff</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -290,7 +292,8 @@
                         </div>
                         <div class="button_center">
                             <button onclick="saveImageUploadTest()" class="save-button">Save Files</button>
-                            <button onclick="saveImageSkipTest()" class="save-button" style=" margin-left: 15px;">Skip Testing</button>
+                            <button onclick="saveImageSkipTest()" class="save-button" style=" margin-left: 15px;">Skip
+                                Testing</button>
                         </div>
                     </div>
 
@@ -447,6 +450,46 @@
             </div>
         </div>
 
+        <!-- Custom Tiff Popup -->
+        <div id="customPopup" class="popup" style="display: none; ">
+            <div class="popup-content" id="nononon"
+                style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
+                <span class="close" onclick="closeCustomPopUp()"
+                    style="cursor: pointer; position: absolute; top: 10px; right: 20px; font-size: 25px;">&times;</span>
+                <div>
+                    <h2 style="text-align: center; color: #333;">Upload a GeoTIFF File</h2>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <input type="file" name="geotiff" accept=".tif,.tiff" required style="margin-bottom: 15px;">
+                    </form>
+                </div>
+
+                <h3 style="margin: 0; padding: 0; padding-bottom: 23px; color: #333;">Select Model</h3>
+                <!-- Add Object Detection Type Dropdown -->
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                    <label for="objectDetectionType" style="margin-right: 10px; color: #333;">Choose Object Detection
+                        Type:</label>
+                    <select id="objectDetectionType" onChange="fetchModel()"
+                        style="padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+                        <option value="detect">Detect</option>
+                        <option value="segment">Segment</option>
+                    </select>
+                </div>
+                <!-- Basic Training Fields -->
+                <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                    <label for="models" style="margin-right: 10px; color: #333;">Choose your Pretrained model:</label>
+                    <select id="models" style="padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+                        <!-- <option value="models1">Project - Your project name</option> -->
+                    </select>
+                </div>
+
+                <!-- Update this button to call uploadFile() on click -->
+                <button type="button" onclick="uploadFile()"
+                    style="background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">Upload
+                    File</button>
+            </div>
+        </div>
+
+
 
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
@@ -458,6 +501,14 @@
 
     <script>
         document.getElementById('newPopup').style.display = 'none';
+
+        function openCustomPopUp() {
+            document.getElementById('customPopup').style.display = 'flex';
+        }
+
+        function closeCustomPopUp() {
+            document.getElementById('customPopup').style.display = 'none';
+        }
 
         function openTab(event, tabName) {
             var i, tabcontent, tablinks;
@@ -472,6 +523,54 @@
             document.getElementById(tabName).style.display = "block";
             event.currentTarget.style.backgroundColor = "#ccc";
         }
+
+        async function fetchModel() {
+            const jsonDataString = JSON.parse(localStorage.getItem('user'));
+
+            const response = await fetch(`/files?userId=${jsonDataString ? jsonDataString.user._id : ''}`);
+            const resp = await response.json();
+
+            // Set the JSON response in session storage
+            sessionStorage.setItem('responseData', JSON.stringify(resp));
+
+            const objectDetectionType = document.getElementById('objectDetectionType').value;
+
+            // Retrieve the data from session storage
+            const storedData = sessionStorage.getItem('responseData');
+            const data = JSON.parse(storedData);
+
+            // Create a select element
+            const selectElement = document.getElementById('models');
+
+            // Clear existing options
+            selectElement.innerHTML = '';
+
+            // Create and add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = 'defaultModel';
+            defaultOption.textContent = 'Select Model';
+            selectElement.appendChild(defaultOption);
+
+            // Filter and create model options based on the selected objectDetectionType
+            const modelFiles = objectDetectionType === 'detect' ? data?.dection?.defaultFiles : data?.segment?.defaultFiles;
+            const userFiles = objectDetectionType === 'detect' ? data?.dection?.userFiles : data?.segment?.userFiles;
+
+            modelFiles.forEach(modelFile => {
+                const modelOption = document.createElement('option');
+                modelOption.value = modelFile.path;
+                modelOption.textContent = `${objectDetectionType === 'detect' ? 'Default' : 'Segment'} Model - ${modelFile.filename}`;
+                selectElement.appendChild(modelOption);
+            });
+
+            // Create and add user model options based on the selected objectDetectionType
+            userFiles.forEach(userFile => {
+                const userOption = document.createElement('option');
+                userOption.value = userFile.path;
+                userOption.textContent = `${objectDetectionType === 'detect' ? 'Default' : 'Segment'} Model - ${userFile.filename}`;
+                selectElement.appendChild(userOption);
+            });
+        }
+        fetchModel();
 
     </script>
 
