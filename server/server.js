@@ -303,7 +303,7 @@ app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
 
     //console.log(path.join(__dirname));
     if (geoTiffFilePath) {
-        const modelPathNew = path.join(__dirname, 'scripts', 'tiffer.py');
+        const modelPathNew = path.join(__dirname, 'scripts', 'multi_band_tiffer.py');
         const userPath = path.join(__dirname, 'userData', `${userId}`);
 
         if (userId) {
