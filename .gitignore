@@ -63,5 +63,5 @@ yarn-error.log*
 /server/yolov5
 *.bat
 unpacked_env 
-new_test_script.sh
+
 new_test_script.txt
