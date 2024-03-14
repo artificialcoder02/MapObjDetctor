@@ -466,12 +466,12 @@ var map = L.map('map', {
 // const tileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png',{ zIndex: -1,
 // maxZoom:19 }).addTo(map);
 
-var layer1 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png').addTo(map);
-var layer2 = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+var layer2 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png').addTo(map);
+var layer1 = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
             crs: L.CRS.EPSG4326,
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        });
+        }).addTo(map);
 
         
         
@@ -486,11 +486,11 @@ var layer2 = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         
                 var option1 = L.DomUtil.create('option', '', select);
                 option1.value = 'layer1';
-                option1.innerHTML = 'ESRI ARGIS SATELITE';
+                option1.innerHTML = 'GOOGLE MAPS SATELITE';
         
                 var option2 = L.DomUtil.create('option', '', select);
                 option2.value = 'layer2';
-                option2.innerHTML = 'GOOGLE MAPS SATELITE';
+                option2.innerHTML = 'ESRI ARGIS LAYER';
         
                 // Add more options for more layers
         
