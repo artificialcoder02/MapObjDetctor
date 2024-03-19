@@ -468,57 +468,57 @@ var map = L.map('map', {
 
 var layer2 = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png').addTo(map);
 var layer1 = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            crs: L.CRS.EPSG4326,
-            maxZoom: 20,
-            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-        }).addTo(map);
+    crs: L.CRS.EPSG4326,
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+}).addTo(map);
 
-        
-        
-        var layerControl = L.Control.extend({
-            options: {
-                position: 'topright'
-            },
-        
-            onAdd: function (map) {
-                var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-                var select = L.DomUtil.create('select', 'layer-select', container);
-        
-                var option1 = L.DomUtil.create('option', '', select);
-                option1.value = 'layer1';
-                option1.innerHTML = 'GOOGLE MAPS SATELITE';
-        
-                var option2 = L.DomUtil.create('option', '', select);
-                option2.value = 'layer2';
-                option2.innerHTML = 'ESRI ARGIS LAYER';
-        
-                // Add more options for more layers
-        
-                select.onchange = function(e){
-                    map.eachLayer(function(layer){
-                        if(layer instanceof L.TileLayer){
-                            map.removeLayer(layer);
-                        }
-                    });
-        
-                    switch (e.target.value) {
-                        case 'layer1':
-                            map.addLayer(layer1);
-                            break;
-                        case 'layer2':
-                            map.addLayer(layer2);
-                            break;
-                        // Add more cases for more layers
-                    }
+
+
+var layerControl = L.Control.extend({
+    options: {
+        position: 'topright'
+    },
+
+    onAdd: function (map) {
+        var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+        var select = L.DomUtil.create('select', 'layer-select', container);
+
+        var option1 = L.DomUtil.create('option', '', select);
+        option1.value = 'layer1';
+        option1.innerHTML = 'GOOGLE MAPS SATELITE';
+
+        var option2 = L.DomUtil.create('option', '', select);
+        option2.value = 'layer2';
+        option2.innerHTML = 'ESRI ARGIS LAYER';
+
+        // Add more options for more layers
+
+        select.onchange = function (e) {
+            map.eachLayer(function (layer) {
+                if (layer instanceof L.TileLayer) {
+                    map.removeLayer(layer);
                 }
-        
-                return container;
+            });
+
+            switch (e.target.value) {
+                case 'layer1':
+                    map.addLayer(layer1);
+                    break;
+                case 'layer2':
+                    map.addLayer(layer2);
+                    break;
+                // Add more cases for more layers
             }
-        });
-        
-        map.addControl(new layerControl());
-        
-        
+        }
+
+        return container;
+    }
+});
+
+map.addControl(new layerControl());
+
+
 
 
 L.control.scale().addTo(map);
@@ -866,8 +866,8 @@ function uploadFile() {
     const formData = new FormData(form);
     // Append the selectedModel as modelPath to the formData
     formData.append('modelPath', selectedModel);
-      // Clear existing layers
-      map.eachLayer(l => {
+    // Clear existing layers
+    map.eachLayer(l => {
         if (l instanceof L.GeoJSON) {
             map.removeLayer(l);
         }
@@ -884,41 +884,65 @@ function uploadFile() {
     })
         .then(response => response.json())
         .then(data => {
-            
-           // Handle the received data
-           console.log(data.geojson);
-           var myLayer = L.geoJSON(data.geojson, {
-             
-               style: function (feature) {
-                   return {
-                       color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
-                       weight: 2,
-                       opacity: 1
-                   };
-               }
-           }).addTo(map);
 
-           var myLayer = L.geoJSON(data.geojson, {
-               crs: L.CRS.EPSG4326,
-               //crs:L.CRS.EPSG3857,
-               style: function (feature) {
-                   return {
-                       color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
-                       weight: 2,
-                       opacity: 1
-                   };
-               }
-           }).addTo(map);
+            // Handle the received data
+            console.log(data.geojson);
+            var myLayer = L.geoJSON(data.geojson, {
 
-           const classes = extractDetectedClasses(data.geojson.features); // Use data.features
-           const color = extractDetectedColor(data.geojson.features); // Use data.features
-           const objectsPerClass = calculateObjectsPerClass(data.geojson.features);
-           const totalClasses = data.geojson.features.length;
+                style: function (feature) {
+                    return {
+                        color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
+                        weight: 2,
+                        opacity: 1
+                    };
+                }
+            }).addTo(map);
 
-           // Update the content of the icons based on the detected classes
-           updateIconContentOnPage(classes, color, objectsPerClass, totalClasses);
-           loadingSpinner.style.display = 'none';
-           menubars.style.display = 'flex';
+            var myLayer = L.geoJSON(data.geojson, {
+                crs: L.CRS.EPSG4326,
+                //crs:L.CRS.EPSG3857,
+                style: function (feature) {
+                    return {
+                        color: feature.properties.color ? feature.properties.color : '#000000',  // Default to black if color is not specified
+                        weight: 2,
+                        opacity: 1
+                    };
+                }
+            }).addTo(map);
+
+            if (data.geojson.features.length > 0) {
+                const firstFeature = data.geojson.features[0];
+
+                let bounds;
+
+                // Check if the geometry is a Polygon or MultiPolygon
+                if (firstFeature.geometry.type === "Polygon" || firstFeature.geometry.type === "MultiPolygon") {
+                    // Use Leaflet to interpret the polygon and get its bounds
+                    const polygon = L.geoJSON(firstFeature.geometry);
+                    bounds = polygon.getBounds();
+                }
+                // If the feature includes a bbox property
+                else if (firstFeature.hasOwnProperty('bbox')) {
+                    // Extract the bounds from the bbox
+                    const bbox = firstFeature.bbox;
+                    bounds = L.latLngBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
+                }
+
+                // If bounds were determined, fit the map to these bounds
+                if (bounds) {
+                    map.fitBounds(bounds);
+                }
+            }
+
+            const classes = extractDetectedClasses(data.geojson.features); // Use data.features
+            const color = extractDetectedColor(data.geojson.features); // Use data.features
+            const objectsPerClass = calculateObjectsPerClass(data.geojson.features);
+            const totalClasses = data.geojson.features.length;
+
+            // Update the content of the icons based on the detected classes
+            updateIconContentOnPage(classes, color, objectsPerClass, totalClasses);
+            loadingSpinner.style.display = 'none';
+            menubars.style.display = 'flex';
         })
         .catch(error => {
             console.error('Error:', error);

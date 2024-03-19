@@ -175,7 +175,9 @@ if __name__ == "__main__":
     parser.add_argument("--model", required=True, help="Path to the YOLOv8 model checkpoint file")
     parser.add_argument("--source", required=True, help="Directory path containing GeoTIFF images")
     parser.add_argument("--output", required=True, help="Output directory for the GeoJSON file")
-
     args = parser.parse_args()
     detections = run_inference(args.model, args.source)
     detections_to_geojson(detections, args.output)
+
+
+
