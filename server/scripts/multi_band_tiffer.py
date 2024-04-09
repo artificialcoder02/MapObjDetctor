@@ -8,9 +8,13 @@ from ultralytics import YOLO
 import random 
 import tempfile
 import shutil
+from osgeo import gdal
 from skimage import exposure
 from rasterio.plot import reshape_as_raster, reshape_as_image
-
+from skimage.exposure import equalize_adapthist
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+from skimage.filters import unsharp_mask
+from skimage.restoration import denoise_wavelet
 
 os.environ["PROJ_LIB"] = r"C:\ProgramData\anaconda3\pkgs\proj-6.2.1-h3758d61_0\Library\share\proj"
 
@@ -46,51 +50,38 @@ def run_inference(model_path, source_image):
 
     model = YOLO(model_path)
 
-    # Define the path for the temporary GeoTIFF directly in the current working directory
-    _, temp_geotiff_filename = tempfile.mkstemp(suffix='.tif', dir=os.getcwd())
-    
-    with rasterio.open(source_image) as src:
-        if src.count >= 3:
-            data = src.read([1, 2, 3])
-        else:
-            data = src.read()
+    # Use GDAL to reproject and directly write to a new temporary file
+    with tempfile.NamedTemporaryFile(suffix='.tif', dir=os.getcwd(), delete=False) as tmp:
+        reprojected_temp_filename = tmp.name
+    gdal.Warp(reprojected_temp_filename, source_image, dstSRS='EPSG:4326')
 
-        # Convert the data to 8-bit if not already, apply enhancements, etc.
-        # This part of the code remains the same as previously described for enhancements
+    # Process the reprojected image
+    with tempfile.NamedTemporaryFile(suffix='.tif', dir=os.getcwd(), delete=False) as tmp:
+        enhanced_temp_filename = tmp.name
 
-        img = reshape_as_image(data)
-        img_eq = exposure.equalize_hist(img)
-        data_eq = reshape_as_raster(img_eq)
-
-        from skimage.exposure import equalize_adapthist
-
-        # Convert to floating point and scale to [0, 1] as needed by equalize_adapthist
+    with rasterio.open(reprojected_temp_filename) as src:
+        data = src.read([1, 2, 3]) if src.count >= 3 else src.read()
         img = reshape_as_image(data).astype('float32') / 255
-
-        # Apply CLAHE
-        img_eq = equalize_adapthist(img)
-
-        # Scale back to [0, 255] and convert to uint8
-        img_eq = (img_eq * 255).astype('uint8')
-        data_eq = reshape_as_raster(img_eq)
-    
-
-        # Copy and update metadata
+        img_normalized = (img - img.min()) / (img.max() - img.min())
+        img_eq = exposure.equalize_adapthist(img_normalized)
+        # Denoise the image
+        img_denoised = denoise_wavelet(img_eq, method='BayesShrink', mode='soft')
+        # Sharpen the image
+        img_sharpened = unsharp_mask(img_denoised, radius=1.0, amount=1.0)
+        # Prepare for saving
+        img_final = (img_sharpened * 255).astype('uint8')
+        data_final = reshape_as_raster(img_final)
         out_meta = src.meta.copy()
         out_meta.update({"count": 3, "dtype": 'uint8'})
 
-        # Write the enhanced and/or converted data to the temporary file
-        with rasterio.open(temp_geotiff_filename, 'w', **out_meta) as dest:
-            dest.write(data_eq)
+    with rasterio.open(enhanced_temp_filename, 'w', **out_meta) as dest:
+        dest.write(data_final)
 
-        # The temporary file is not deleted and should be available in the current working directory
-        print(f"Temporary TIFF saved at: {temp_geotiff_filename}")
-                
-        # Now, use this new GeoTIFF for inference
-        results = model(temp_geotiff_filename)
-        detections = []
+    print(f"Enhanced and reprojected TIFF saved at: {enhanced_temp_filename}")
+    results = model(enhanced_temp_filename)
+    detections = []
 
-        for result in results:
+    for result in results:
             # Check and handle OBB first
             obb = getattr(result, 'obb', None)
             if obb is not None:
