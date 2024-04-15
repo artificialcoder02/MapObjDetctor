@@ -15,6 +15,8 @@ from skimage.exposure import equalize_adapthist
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 from skimage.filters import unsharp_mask
 from skimage.restoration import denoise_wavelet
+import numpy as np
+
 
 os.environ["PROJ_LIB"] = r"C:\ProgramData\anaconda3\pkgs\proj-6.2.1-h3758d61_0\Library\share\proj"
 
@@ -69,10 +71,12 @@ def run_inference(model_path, source_image):
         # Sharpen the image
         img_sharpened = unsharp_mask(img_denoised, radius=1.0, amount=1.0)
         # Prepare for saving
-        img_final = (img_sharpened * 255).astype('uint8')
+        img_final = np.clip(img_sharpened,0,1)
+        img_final = (img_final * 255).astype('uint8')
+        
         data_final = reshape_as_raster(img_final)
         out_meta = src.meta.copy()
-        out_meta.update({"count": 3, "dtype": 'uint8'})
+        out_meta.update({"count": 3, "dtype": 'uint8', "nodata":255})
 
     with rasterio.open(enhanced_temp_filename, 'w', **out_meta) as dest:
         dest.write(data_final)
