@@ -118,7 +118,7 @@ const UserController = {
 
     logoutss: async (req, res) => {
         try {
-            const token = req.cookies.jwt;
+            const token = req.query.token;
             const decoded = jwt.verify(token, process.env.JWT_TOKEN);
 
             const user = await User.findOne({ _id: decoded._id, 'tokens.token': token });
@@ -239,7 +239,7 @@ const UserController = {
 
             const detectionSubDirs = ['shaper', 'geot', 'geoj', 'image'];
             const trainingSubDirs = ['annotations1', 'model', 'data'];
-            
+
             const runSubDirs = ['detect'];
 
             // Create directories and subdirectories
@@ -258,11 +258,13 @@ const UserController = {
                 // Create additional subdirectories for 'images' and 'labels' within 'annotations'
                 if (subDir === 'annotations1') {
                     const annotationsSubDirs = ['train', 'val'];
-                    const img_labeldir = ['images','labels']
+                    const img_labeldir = ['images', 'labels'];
 
                     for (const annotationSubDir of annotationsSubDirs) {
                         await fs.mkdir(path.join(currentTrainingSubDir, annotationSubDir), { recursive: true });
-                        await fs.mkdir(path.join(currentTrainingSubDir, annotationSubDir, img_labeldir), { recursive: true });
+                        for (const dir of img_labeldir) {
+                            await fs.mkdir(path.join(currentTrainingSubDir, annotationSubDir, dir), { recursive: true });
+                        }
                     }
                 } else {
                     await fs.mkdir(currentTrainingSubDir, { recursive: true });
@@ -286,7 +288,7 @@ const UserController = {
 
     checkLoginStatus: async (req, res) => {
         try {
-            const token = req.cookies.jwt;
+            const token = req.query.token; // Get the token from the request body
             const decoded = jwt.verify(token, process.env.JWT_TOKEN);
 
             const user = await User.findOne({ _id: decoded._id, 'tokens.token': token });

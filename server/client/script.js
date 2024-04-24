@@ -49,15 +49,16 @@ const checkLoginStatus = async () => {
     try {
 
         // Fetch user information from the server using the token
-        const response = await fetch('/api/v0.1/check-login-status', {
+        const token = sessionStorage.getItem('token');
+        console.log(token)
+        const response = await fetch(`http://localhost:3000/api/v0.1/check-login-status/?token=${token}`, {
             method: 'GET',
             headers: {
-                // 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
                 // Add any additional headers if needed
             },
-            credentials: 'include', // This line sets withCredentials to true
-
+            //credentials: 'include', // This line sets withCredentials to true
+           
         });
 
         if (!response.ok) {
@@ -370,14 +371,10 @@ function toggleDropdown() {
 // Function to handle logout
 async function logout() {
     try {
-        // Clear token from sessionStorage
-        sessionStorage.removeItem('token');
-
-        // Clear user data from localStorage
-        localStorage.removeItem('user');
+        const token = sessionStorage.getItem('token')
 
         // Make a server-side logout request
-        const response = await fetch('/api/v0.1/logout', {
+        const response = await fetch(`/api/v0.1/logout/?token=${token}`, {
             method: 'GET',
             headers: {
                 // 'Authorization': `Bearer ${token}`,
@@ -386,7 +383,10 @@ async function logout() {
             },
             credentials: 'include', // This line sets withCredentials to true
         });
-
+        // Clear token from sessionStorage
+        sessionStorage.removeItem('token');
+        // Clear user data from localStorage
+        localStorage.removeItem('user');
         if (!response.ok) {
             // Handle server-side logout failure if needed
             console.error('Server-side logout failed:', response.statusText);
@@ -394,11 +394,16 @@ async function logout() {
         // Show success message and update login status after a delay
         setTimeout(() => {
             showSuccess('Logout successfully');
+            // Clear token from sessionStorage
+            sessionStorage.removeItem('token');
+            // Clear user data from localStorage
+            localStorage.removeItem('user');
             checkAndUpdateLoginStatus();
         }, 1000);
 
         // Optionally, redirect to the login page or any other page after logout
-        window.location.href = '/login'; // Change '/login' to your desired logout redirect page
+       //window.location.href = '/login'; // Change '/login' to your desired logout redirect page
+        window.location.href = '/'
     } catch (error) {
         console.error('Logout failed:', error);
     }
@@ -885,6 +890,15 @@ function uploadFile() {
         .then(response => response.json())
         .then(data => {
 
+            if (data.message === 'No detections') {
+                // Trigger SweetAlert to inform there are no detections
+                Swal.fire({
+                    icon: 'info',
+                    title: 'No Detections',
+                    text: 'There are no detections in the uploaded data.',
+                    confirmButtonText: 'Ok'
+                });
+            } else {
             // Handle the received data
             console.log(data.geojson);
             var myLayer = L.geoJSON(data.geojson, {
@@ -943,9 +957,16 @@ function uploadFile() {
             updateIconContentOnPage(classes, color, objectsPerClass, totalClasses);
             loadingSpinner.style.display = 'none';
             menubars.style.display = 'flex';
+            }
         })
         .catch(error => {
             console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: `An error occurred: ${error.message}`,
+                footer: 'Please refresh the page  or contact support if the problem persists.'
+            }); 
         });
 }
 

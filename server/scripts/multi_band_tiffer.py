@@ -16,7 +16,9 @@ from rasterio.warp import calculate_default_transform, reproject, Resampling
 from skimage.filters import unsharp_mask
 from skimage.restoration import denoise_wavelet
 import numpy as np
-
+import torch 
+import numpy as np
+import shutil 
 
 os.environ["PROJ_LIB"] = r"C:\ProgramData\anaconda3\pkgs\proj-6.2.1-h3758d61_0\Library\share\proj"
 
@@ -47,113 +49,193 @@ def get_next_file_number(output_folder):
     next_file_number = max(existing_numbers) + 1 if existing_numbers else 1
     return next_file_number
 
+def load_model_and_get_img_size(model_path):
+    # Load the checkpoint
+    checkpoint = torch.load(model_path)
+    img_size = checkpoint['train_args']['imgsz']  # Extract the image size used during training
+    
+    # Initialize and load the YOLO model with the weights
+    model = YOLO(model_path)  # Assuming this loads the model with weights
+    
+
+    return model, img_size
+
+def load_and_pad_geotiff(filepath, input_size):
+    with rasterio.open(filepath) as src:
+        data = src.read()
+        original_height, original_width = data.shape[1], data.shape[2]
+        
+        pad_height = (input_size - original_height % input_size) % input_size
+        pad_width = (input_size - original_width % input_size) % input_size
+        pad_height_top = pad_height // 2
+        pad_height_bottom = pad_height - pad_height_top
+        pad_width_left = pad_width // 2
+        pad_width_right = pad_width - pad_width_left
+        
+        padded_data = np.pad(data, pad_width=((0, 0), (pad_height_top, pad_height_bottom), (pad_width_left, pad_width_right)),
+                             mode='constant', constant_values=0)
+
+        new_transform = src.transform * src.transform.translation(-pad_width_left, -pad_height_top)
+        new_profile = src.profile
+        new_profile.update({
+            'height': original_height + pad_height,
+            'width': original_width + pad_width,
+            'transform': new_transform
+        })
+
+        print(f"Original dimensions: {original_height}x{original_width}")
+        print(f"New dimensions: {original_height + pad_height}x{original_width + pad_width}")
+
+        return padded_data, new_profile
+def chunk_image(image, chunk_size, profile, save_path):
+    c_height, c_width = image.shape[1] // chunk_size, image.shape[2] // chunk_size
+    os.makedirs(save_path, exist_ok=True)
+    chunk_files = []  # Initialize an empty list to store file paths
+    for i in range(c_height):
+        for j in range(c_width):
+            chunk = image[:, i*chunk_size:(i+1)*chunk_size, j*chunk_size:(j+1)*chunk_size]
+            chunk_profile = profile.copy()
+            chunk_profile.update({
+                'height': chunk_size,
+                'width': chunk_size,
+                'transform': rasterio.windows.transform(
+                    rasterio.windows.Window(j*chunk_size, i*chunk_size, chunk_size, chunk_size),
+                    profile['transform'])
+            })
+            filename = f"{save_path}/chunk_{i}_{j}.tif"
+            with rasterio.open(filename, 'w', **chunk_profile) as dst:
+                dst.write(chunk)
+            chunk_files.append(filename)  # Add the path to the list of chunk files
+    return chunk_files  # Return the list of chunk files    
+
 
 def run_inference(model_path, source_image):
 
     model = YOLO(model_path)
 
-    # Use GDAL to reproject and directly write to a new temporary file
-    with tempfile.NamedTemporaryFile(suffix='.tif', dir=os.getcwd(), delete=False) as tmp:
-        reprojected_temp_filename = tmp.name
-    gdal.Warp(reprojected_temp_filename, source_image, dstSRS='EPSG:4326')
+    # Load the model and determine the required image size
+    model, img_size = load_model_and_get_img_size(model_path)
 
-    # Process the reprojected image
-    with tempfile.NamedTemporaryFile(suffix='.tif', dir=os.getcwd(), delete=False) as tmp:
-        enhanced_temp_filename = tmp.name
+    # Load and pad the GeoTIFF, then chunk it into manageable sizes
+    padded_image, profile = load_and_pad_geotiff(source_image, img_size)
+    save_path = os.path.join(os.path.dirname(source_image), "temporary_chunks")  # Temporary directory for chunks
+    chunk_files = chunk_image(padded_image, img_size, profile, save_path)
 
-    with rasterio.open(reprojected_temp_filename) as src:
-        data = src.read([1, 2, 3]) if src.count >= 3 else src.read()
-        img = reshape_as_image(data).astype('float32') / 255
-        img_normalized = (img - img.min()) / (img.max() - img.min())
-        img_eq = exposure.equalize_adapthist(img_normalized)
-        # Denoise the image
-        img_denoised = denoise_wavelet(img_eq, method='BayesShrink', mode='soft')
-        # Sharpen the image
-        img_sharpened = unsharp_mask(img_denoised, radius=1.0, amount=1.0)
-        # Prepare for saving
-        img_final = np.clip(img_sharpened,0,1)
-        img_final = (img_final * 255).astype('uint8')
-        
-        data_final = reshape_as_raster(img_final)
-        out_meta = src.meta.copy()
-        out_meta.update({"count": 3, "dtype": 'uint8', "nodata":255})
+    all_detections = []
+    # Process each chunk and handle results
+    for chunk_file in chunk_files:
+        with rasterio.open(chunk_file) as src:
 
-    with rasterio.open(enhanced_temp_filename, 'w', **out_meta) as dest:
-        dest.write(data_final)
+            try:
+                # Use GDAL to reproject and directly write to a new temporary file
+                with tempfile.NamedTemporaryFile(suffix='.tif', dir=os.getcwd(), delete=False) as tmp:
+                    reprojected_temp_filename = tmp.name
+                gdal.Warp(reprojected_temp_filename, source_image, dstSRS='EPSG:4326')
 
-    print(f"Enhanced and reprojected TIFF saved at: {enhanced_temp_filename}")
-    results = model(enhanced_temp_filename)
-    detections = []
+                # Process the reprojected image
+                with tempfile.NamedTemporaryFile(suffix='.tif', dir=os.getcwd(), delete=False) as tmp:
+                    enhanced_temp_filename = tmp.name
 
-    for result in results:
-            # Check and handle OBB first
-            obb = getattr(result, 'obb', None)
-            if obb is not None:
-                all_obb_coords = obb.xyxyxyxy.cpu().numpy().tolist()
-                class_labels = obb.cls.cpu().numpy().tolist() 
-                for obb_coords in all_obb_coords:
-                    geo_coords = []
-                    for x, y in obb_coords:
-                        lat, lon = pixel_to_latlng(int(x), int(y), src)
-                        geo_coords.append((lon, lat))  # Longitude, Latitude order
+                with rasterio.open(reprojected_temp_filename) as src:
+                    data = src.read([1, 2, 3]) if src.count >= 3 else src.read()
+                    img = reshape_as_image(data).astype('float32') / 255
+                    img_normalized = (img - img.min()) / (img.max() - img.min())
+                    #img_eq = exposure.equalize_adapthist(img_normalized)
+                    # Denoise the image
+                    #img_denoised = denoise_wavelet(img_eq, method='BayesShrink', mode='soft')
+                    # Sharpen the image
+                    #img_sharpened = unsharp_mask(img_denoised, radius=1.0, amount=1.0)
+                    # Prepare for saving
+                    img_final = np.clip(img_normalized,0,1)
+                    img_final = (img_final * 255).astype('uint8')
                     
-                    class_names = []
-                    for key in result.names:
-                        if key in class_labels:
-                            class_names.append(result.names[key])
-                                                            
-                    #class_names = [result.names.get(cls_id, "Unknown") for cls_id in class_labels]
-                    obb_detection = {
-                        "coordinates": geo_coords,  # Coordinates for this specific OBB
-                        "confidence": obb.conf.tolist(),
-                        "class_label": obb.cls.tolist(),
-                        "class_names": class_names
-                    }
-                    detections.append(obb_detection)
-                
-                continue  
-            
+                    data_final = reshape_as_raster(img_final)
+                    out_meta = src.meta.copy()
+                    out_meta.update({"count": 3, "dtype": 'uint8', "nodata":255})
 
-            pre = json.loads(result.tojson())
+                with rasterio.open(enhanced_temp_filename, 'w', **out_meta) as dest:
+                    dest.write(data_final)
 
-            for item in pre:
-                box = item.get("box")
-                x1 = box.get("x1")
-                y1 = box.get("y1")
-                x2 = box.get("x2")
-                y2 = box.get("y2")
-                #Handle segmentation 
-                if (item.get('segments') is not None ):
-                    masks = item.get("segments")
-                    x = masks.get("x")
-                    y = masks.get("y")
-                    segment_coords = []
+                print(f"Enhanced and reprojected TIFF saved at: {enhanced_temp_filename}")
+                results = model(enhanced_temp_filename)
+            finally:
+                    # Ensure temporary files are deleted
+                if os.path.exists(reprojected_temp_filename):
+                    os.remove(reprojected_temp_filename)
+                if os.path.exists(enhanced_temp_filename):
+                    os.remove(enhanced_temp_filename)
+            detections = []
+
+            for result in results:
+                    # Check and handle OBB first
+                    obb = getattr(result, 'obb', None)
+                    if obb is not None:
+                        all_obb_coords = obb.xyxyxyxy.cpu().numpy().tolist()
+                        class_labels = obb.cls.cpu().numpy().tolist() 
+                        for obb_coords in all_obb_coords:
+                            geo_coords = []
+                            for x, y in obb_coords:
+                                lat, lon = pixel_to_latlng(int(x), int(y), src)
+                                geo_coords.append((lon, lat))  # Longitude, Latitude order
+                            
+                            class_names = []
+                            for key in result.names:
+                                if key in class_labels:
+                                    class_names.append(result.names[key])
+                                                                    
+                            #class_names = [result.names.get(cls_id, "Unknown") for cls_id in class_labels]
+                            obb_detection = {
+                                "coordinates": geo_coords,  # Coordinates for this specific OBB
+                                "confidence": obb.conf.tolist(),
+                                "class_label": obb.cls.tolist(),
+                                "class_names": class_names
+                            }
+                            detections.append(obb_detection)
+                        
+                        continue  
                     
-                    # Convert to integer and iterate over each point in the segment
-                    for px, py in zip(map(int, x), map(int, y)):
-                        mlat, mlon = pixel_to_latlng(px, py, src)
-                        segment_coords.append((mlat, mlon))
+
+                    pre = json.loads(result.tojson())
+
+                    for item in pre:
+                        box = item.get("box")
+                        x1 = box.get("x1")
+                        y1 = box.get("y1")
+                        x2 = box.get("x2")
+                        y2 = box.get("y2")
+                        #Handle segmentation 
+                        if (item.get('segments') is not None ):
+                            masks = item.get("segments")
+                            x = masks.get("x")
+                            y = masks.get("y")
+                            segment_coords = []
+                            
+                            # Convert to integer and iterate over each point in the segment
+                            for px, py in zip(map(int, x), map(int, y)):
+                                mlat, mlon = pixel_to_latlng(px, py, src)
+                                segment_coords.append((mlat, mlon))
+                            
+                            # Store the converted segment coordinates
+                            item["segment_coords"] = segment_coords
+
+                            
+                            ''' mcx , mcy = pixel_to_latlng (x , y , src)
+                            item["mx"] = mcx
+                            item["my"] = mcy  '''
                     
-                    # Store the converted segment coordinates
-                    item["segment_coords"] = segment_coords
+                        # Convert pixel coordinates to latitude and longitude
+                        lat1, lon1 = pixel_to_latlng(x1, y1, src)
+                        lat2, lon2 = pixel_to_latlng(x2, y2, src)
+                        
 
-                    
-                    ''' mcx , mcy = pixel_to_latlng (x , y , src)
-                    item["mx"] = mcx
-                    item["my"] = mcy  '''
-            
-                # Convert pixel coordinates to latitude and longitude
-                lat1, lon1 = pixel_to_latlng(x1, y1, src)
-                lat2, lon2 = pixel_to_latlng(x2, y2, src)
-                
-
-                item["lat1"] = lat1
-                item["lng1"] = lon1
-                item["lat2"] = lat2
-                item["lng2"] = lon2
-                
-                detections.append(item)
-
+                        item["lat1"] = lat1
+                        item["lng1"] = lon1
+                        item["lat2"] = lat2
+                        item["lng2"] = lon2
+                        
+                        detections.append(item)
+    shutil.rmtree(save_path)
+    print(f"Temporary directory '{save_path}' has been deleted.")
     return detections
 
 def detections_to_geojson(input_json, output_folder):

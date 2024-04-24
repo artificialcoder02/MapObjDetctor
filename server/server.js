@@ -125,18 +125,29 @@ cron.schedule('0 */12 * * *', async () => { // Runs every 12 hours
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             console.log(diffDays > 7);
-            if (diffDays > 7) { // Check if folderCreatedeDated is older than one day
+            if (diffDays > 7) { // Check if folderCreatedeDated is older than seven day
                 const userFolderPath = path.join(__dirname, 'userData', user._id.toString());
-                const subFolders = ['detection', 'training'];
 
+                const subFolders = ['detection', 'training'];
+                
                 for (const subFolder of subFolders) {
                     const subFolderPath = path.join(userFolderPath, subFolder);
 
+                    // Skip deletion of the detect folder under training/runs
+                    if (subFolder === 'training') {
+                        await deleteFoldersExceptDetect(subFolderPath);
+                    } else {
+                        // Recursively delete other folders
+                        await fs.rmdir(subFolderPath, { recursive: true });
+                    }
+
                     // Use the renamed variable to remove the folder and its contents
-                    await fileSystem.rmdir(subFolderPath, { recursive: true });
+                    //await fileSystem.rmdir(subFolderPath, { recursive: true });
 
                     console.log(`Cleared contents of folder: ${subFolderPath}`);
                 }
+
+
 
                 // Create new folders and subdirectories
                 const detectionDir = path.join(userFolderPath, 'detection');
@@ -168,6 +179,25 @@ cron.schedule('0 */12 * * *', async () => { // Runs every 12 hours
         console.error('Error processing user folders:', error);
     }
 });
+
+async function deleteFoldersExceptDetect(folderPath) {
+    try {
+        const entries = await fs.readdir(folderPath, { withFileTypes: true });
+        for (const entry of entries) {
+            const entryPath = path.join(folderPath, entry.name);
+            if (entry.isDirectory()) {
+                if (entryPath.endsWith('runs' + path.sep + 'detect') || entryPath.endsWith('runs' + path.sep + 'segment')) {
+                    console.log(`Skipping deletion of: ${entryPath}`);
+                } else {
+                    await fs.rmdir(entryPath, { recursive: true });
+                    console.log(`Deleted folder: ${entryPath}`);
+                }
+            }
+        }
+    } catch (error) {
+        console.error(`Error deleting folders in ${folderPath}:`, error);
+    }
+}
 
 // Use the cookie-parser middleware
 app.use(cookieParser());
@@ -295,7 +325,7 @@ app.get('/files', async (req, res) => {
 });
 
 
-app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
+/* app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
     const geoTiffFilePath = req.file.path;
     const userId = req.query.userId;
     const modelPath = req.body.modelPath;
@@ -314,8 +344,8 @@ app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
         }
      
 
-        console.log(`python ${modelPathNew} --model ${modelPath} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`);
-        exec(`python ${modelPathNew} --model ${modelPath} --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`, (error, stdout, stderr) => {
+        console.log(`python ${modelPathNew} --model ${modelPath}/weights/best.pt --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`);
+        exec(`python ${modelPathNew} --model ${modelPath}/weights/best.pt --source ${geoTiffFilePath} ${userId ? `--userId ${userId}` : ''}`, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing Script: ${stderr}`);
                 return res.status(500).json({ error: 'Error performing latlong conversion' }); ˀ
@@ -364,12 +394,112 @@ app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
                     });
                 }
             });
-            // Instead of reading the processed image from a file, you can directly convert it to base64
+
         });
         
     }
 
+}); */
+
+
+app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
+    const geoTiffFilePath = req.file.path;
+    const userId = req.query.userId;
+    const modelPath = req.body.modelPath;
+    const directoryPath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
+    const userPath = path.join(__dirname, 'userData', `${userId}`);
+
+    if (!geoTiffFilePath) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
+
+    if (userId) {
+        // Check if user directory exists
+        if (fs.existsSync(userPath)) {
+            process.chdir(userPath); // Change the current working directory to userPath
+        }
+    }
+
+    //const modelPathNew = path.join(__dirname, 'scripts', 'multi_band_tiffer.py');
+    const weightsPath = `${modelPath}/weights/best.pt`;
+
+
+    if (fs.existsSync(weightsPath)) {
+        runModel(weightsPath, geoTiffFilePath);
+    } else {
+        console.log("Primary weights not found, trying alternative model path.");
+        const alternativeModelPath = `${modelPath}`; // Define how the alternative path should be constructed
+        if (fs.existsSync(alternativeModelPath)) {
+            runModel(alternativeModelPath, geoTiffFilePath);
+        } else {
+            return res.status(500).json({ error: 'No valid model files found.' });
+        }
+    }
+
+    function runModel(modelPath, sourcePath) {
+        const modelPathNew = path.join(__dirname, 'scripts', 'multi_band_tiffer.py');
+        const command = `python ${modelPathNew} --model ${modelPath} --source ${sourcePath} ${userId ? `--userId ${userId}` : ''}`;
+        console.log(command);
+    
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing script: ${stderr}`);
+                return res.status(500).json({ error: 'Error executing model script', details: stderr });
+            }
+    
+            // Call processGeoJSON only if the script execution is successful
+            fs.readdir(directoryPath, (err, files) => {
+                
+                console.log(err);
+                if (err) {
+                    console.error('Error reading directory:', err);
+                    return res.status(500).json({ error: 'Error reading directory' });
+                } else {
+                    // Filter the files with the pattern "output_<number>.geojson"
+                    const geojsonFiles = files.filter(file => file.match(/^output_\d+\.geojson$/));
+                    console.log(geojsonFiles);
+
+                    // Sort the files by the creation time
+                    geojsonFiles.sort((fileA, fileB) => {
+                        return fs.statSync(path.join(directoryPath, fileB)).ctime.getTime() - fs.statSync(path.join(directoryPath, fileA)).ctime.getTime();
+                    });
+
+                    // Get the latest file
+                    const latestFile = geojsonFiles[0];
+
+                    // Read the file and load the data into a variable
+                    fs.readFile(path.join(directoryPath, latestFile), 'utf8', (err, data) => {
+                        console.log(err);
+
+                        if (err) {
+                            console.error('Error reading file:', err);
+                            return;
+                        } else {
+                            try {
+                                const jsonData = JSON.parse(data);
+                                console.log('Loaded data:', jsonData);
+                            
+                                // Check if the features array is empty or null
+                                if (!jsonData.features || jsonData.features.length === 0) {
+                                    console.log('No detections found');
+                                    return res.status(200).json({ geojson: jsonData, message: 'No detections' });
+                                }
+                            
+                                return res.status(200).json({ geojson: jsonData });
+                            } catch (error) {
+                                console.error('Error parsing JSON data:', error);
+                                return res.status(500).json({ error: 'Error parsing JSON data' });
+                            }                            
+                        }
+                    });
+                }
+            });
+        });
+    }
+    
 });
+
+
 
 
 app.post('/save-captured-image', (req, res) => {
@@ -538,7 +668,7 @@ app.post('/save-captured-image', (req, res) => {
 function getRecentGeoJSON(userId) {
 
     const directoryPath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
-    // const directoryPath = '/Users/ashish/Desktop/MapObjDetctor/server/geoj';
+    
 
     // Read the directory
     const files = fs.readdirSync(directoryPath);
@@ -1070,6 +1200,7 @@ if (fs.existsSync(filePath)) {
 
 app.get('/runcmd', (req, res) => {
     const batchScriptPath = path.join(__dirname, 'run-label-studio.bat');
+    console.log("Label Studio has been Triggered by User")
 
     exec(batchScriptPath, (error) => {
         if (error) {
@@ -1099,7 +1230,7 @@ app.get('/runcmd', (req, res) => {
 });
 
 
-app.listen(3000, () => {
+app.listen(3000,'0.0.0.0', () => {
     console.log('Server is running on port 3000');
 });
 

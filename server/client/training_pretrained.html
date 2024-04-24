@@ -192,16 +192,16 @@
         // Function to check user login status
         const checkLoginStatus = async () => {
             try {
-
+                const token = JSON.parse(localStorage.getItem('token'))
                 // Fetch user information from the server using the token
-                const response = await fetch('/api/v0.1/check-login-status', {
+                const response = await fetch(`/api/v0.1/check-login-status?token=${token}`, {
                     method: 'GET',
                     headers: {
                         // 'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                         // Add any additional headers if needed
                     },
-                    credentials: 'include', // This line sets withCredentials to true
+                    //credentials: 'include', // This line sets withCredentials to true
 
                 });
 
