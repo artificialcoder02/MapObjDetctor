@@ -111,93 +111,175 @@ if (!fs.existsSync(modelSegFolder)) {
 
 
 
-const fileSystem = require('fs').promises; // Use a different variable name for the fs module
+const fileSystem = require('fs').promises; // Use a different variable name for the fs promises module
+const generalFolders = ['geot', 'geoj', 'image', 'runs'];
+const baseDirectory = __dirname;  // Adjust this if your base directory is different
+const generalDetectFolder = path.join(__dirname, 'runs', 'detect'); //finding out runs/detect
+
+
+async function processTrainingFolder(trainingFolderPath) {
+    const entries = await fileSystem.readdir(trainingFolderPath, { withFileTypes: true });
+    for (const entry of entries) {
+        const entryPath = path.join(trainingFolderPath, entry.name);
+        if (entry.name === 'runs') {
+            await processRunsFolder(entryPath);  // Special handling for 'runs' folder
+        } else {
+            await deleteNonPtFiles(entryPath);  // Apply general .pt file preservation
+        }
+    }
+}
+
+async function deleteNonPtFiles(folderPath) {
+    const entries = await fileSystem.readdir(folderPath, { withFileTypes: true });
+    for (const entry of entries) {
+        const entryPath = path.join(folderPath, entry.name);
+        if (entry.isFile() && !entryPath.endsWith('.pt')) {
+            await fileSystem.rm(entryPath);
+            console.log(`Deleted file: ${entryPath}`);
+        } else if (entry.isDirectory()) {
+            await deleteNonPtFiles(entryPath);  // Recursively handle subdirectories
+        }
+    }
+}
+
+async function processRunsFolder(runsFolderPath) {
+    const runsEntries = await fileSystem.readdir(runsFolderPath, { withFileTypes: true });
+    for (const file of runsEntries) {
+        const filePath = path.join(runsFolderPath, file.name);
+        if (!file.isDirectory() && !filePath.endsWith('.pt')) {
+            await fileSystem.rm(filePath);
+            console.log(`Deleted file: ${filePath}`);
+        } else {
+            console.log(`Skipped file: ${filePath}`);
+        }
+    }
+}
+
+async function recreateStructure(userFolderPath) {
+    const detectionDir = path.join(userFolderPath, 'detection');
+    const trainingDir = path.join(userFolderPath, 'training');
+    await fileSystem.mkdir(detectionDir, { recursive: true });
+    await fileSystem.mkdir(trainingDir, { recursive: true });
+
+    const detectionSubDirs = ['shaper', 'geot', 'geoj', 'image'];
+    const trainingSubDirs = ['annotations1', 'model', 'data'];
+    for (const subDir of detectionSubDirs) {
+        await fileSystem.mkdir(path.join(detectionDir, subDir), { recursive: true });
+    }
+    for (const subDir of trainingSubDirs) {
+        await fileSystem.mkdir(path.join(trainingDir, subDir), { recursive: true });
+    }
+}
+
+
+
+
+async function updateUserFolderDate(user) {
+    const formattedDate = new Date().toISOString().split('T')[0];
+    user.folderCreatedeDated = formattedDate;
+    await user.save();
+    console.log(`Updated folder creation date for user: ${user._id}`);
+}
+
+async function createFolder(folderPath) {
+    try {
+        await fileSystem.mkdir(folderPath, { recursive: true });
+        console.log(`Successfully created folder: ${folderPath}`);
+    } catch (error) {
+        console.error(`Error creating folder ${folderPath}:`, error);
+    }
+}
+
+async function deleteFolder(folderPath) {
+    try {
+        await fileSystem.rm(folderPath, { recursive: true, force: true });
+        console.log(`Deleted folder: ${folderPath}`);
+    } catch (error) {
+        console.error(`Error deleting folder ${folderPath}:`, error);
+    }
+}
+
+
+async function handleFolders() {
+    for (const folder of generalFolders) {
+        const folderPath = path.join(baseDirectory, folder);
+        console.log(`Handling folder: ${folderPath}`);
+
+        // Delete the folder
+        await deleteFolder(folderPath);
+        console.log(`Deleted folder: ${folderPath}`);
+
+        // Recreate the folder
+        await createFolder(folderPath);
+        console.log(`Recreated folder: ${folderPath}`);
+
+
+    }
+}
+
 
 // Scheduled task to check and clear old user folders
-cron.schedule('0 */12 * * *', async () => { // Runs every 12 hours
+cron.schedule('0 */24 * * *', async () => {  // Adjusted to run every 24 hours
     try {
+
+        console.log("Fetching all users from the database...");
         const users = await User.find();
+        console.log(`Retrieved ${users.length} users.`);
         const currentDate = new Date();
 
         for (const user of users) {
             const folderDate = new Date(user.folderCreatedeDated);
             const diffTime = Math.abs(currentDate - folderDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24 ));  // Calculate difference in days
 
-            console.log(diffDays > 7);
-            if (diffDays > 7) { // Check if folderCreatedeDated is older than seven day
+            console.log(`Checking if folder date is older than 7 days: ${diffDays > 7}`);
+            if (diffDays > 7) {
+
+                // Delete the global downloaded_tiles folder if it exists
+                const downloadedTilesPath = path.join(__dirname, 'downloaded_tiles');
+                await deleteFolder(downloadedTilesPath);
+                console.log(`Checked and handled global downloaded_tiles folder at ${downloadedTilesPath}`);
+                handleFolders()
+
+                //Handling the case of runs/detect in general user
+                await createFolder(generalDetectFolder);
+
                 const userFolderPath = path.join(__dirname, 'userData', user._id.toString());
+                const subFolders = ['detection', 'runs', 'training', 'downloaded_tiles', 'temporary_chunks'];
+                const runsDetectFolder = path.join(userFolderPath, 'runs' , 'detect');
+                //Handling the case of runs/detect for specific user
+                await createFolder(runsDetectFolder);
 
-                const subFolders = ['detection', 'training'];
-                
                 for (const subFolder of subFolders) {
                     const subFolderPath = path.join(userFolderPath, subFolder);
-
-                    // Skip deletion of the detect folder under training/runs
-                    if (subFolder === 'training') {
-                        await deleteFoldersExceptDetect(subFolderPath);
+                    if (subFolder === 'downloaded_tiles' || subFolder === 'temporary_chunks' || subFolder === 'runs') {
+                        // Delete these folders if they exist
+                        await deleteFolder(subFolderPath);
+                    } else if (subFolder === 'training') {
+                        // Special handling for training, where .pt files in runs need to be preserved
+                        await processTrainingFolder(subFolderPath);
                     } else {
-                        // Recursively delete other folders
-                        await fs.rmdir(subFolderPath, { recursive: true });
+                        // Process detection folder for .pt files
+                        await deleteNonPtFiles(subFolderPath);
                     }
-
-                    // Use the renamed variable to remove the folder and its contents
-                    //await fileSystem.rmdir(subFolderPath, { recursive: true });
-
-                    console.log(`Cleared contents of folder: ${subFolderPath}`);
                 }
 
+                // Log folder processing completion
+                console.log(`Processed folders for user: ${user._id}`);
+                // Re-create directory structure
+                await recreateStructure(userFolderPath);
+                // Update the user's folder creation date
+                await updateUserFolderDate(user);
 
-
-                // Create new folders and subdirectories
-                const detectionDir = path.join(userFolderPath, 'detection');
-                const trainingDir = path.join(userFolderPath, 'training');
-
-                const detectionSubDirs = ['shaper', 'geot', 'geoj', 'image'];
-                const trainingSubDirs = ['annotations1', 'model', 'data'];
-
-                await fileSystem.mkdir(detectionDir);
-                await fileSystem.mkdir(trainingDir);
-
-                for (const subDir of detectionSubDirs) {
-                    await fileSystem.mkdir(path.join(detectionDir, subDir));
-                }
-
-                for (const subDir of trainingSubDirs) {
-                    await fileSystem.mkdir(path.join(trainingDir, subDir));
-                }
-
-                // Format the current date as "YYYY-MM-DD"
-                const formattedDate = currentDate.toISOString().split('T')[0];
-
-                // Update the user's folderCreatedeDated to the formatted date
-                user.folderCreatedeDated = formattedDate;
-                await user.save(); // Save the updated user object
             }
         }
+        console.log('Automatic Cleanup of User Files Complete');
     } catch (error) {
         console.error('Error processing user folders:', error);
     }
 });
 
-async function deleteFoldersExceptDetect(folderPath) {
-    try {
-        const entries = await fs.readdir(folderPath, { withFileTypes: true });
-        for (const entry of entries) {
-            const entryPath = path.join(folderPath, entry.name);
-            if (entry.isDirectory()) {
-                if (entryPath.endsWith('runs' + path.sep + 'detect') || entryPath.endsWith('runs' + path.sep + 'segment')) {
-                    console.log(`Skipping deletion of: ${entryPath}`);
-                } else {
-                    await fs.rmdir(entryPath, { recursive: true });
-                    console.log(`Deleted folder: ${entryPath}`);
-                }
-            }
-        }
-    } catch (error) {
-        console.error(`Error deleting folders in ${folderPath}:`, error);
-    }
-}
+
 
 // Use the cookie-parser middleware
 app.use(cookieParser());
@@ -440,16 +522,16 @@ app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
         const modelPathNew = path.join(__dirname, 'scripts', 'multi_band_tiffer.py');
         const command = `python ${modelPathNew} --model ${modelPath} --source ${sourcePath} ${userId ? `--userId ${userId}` : ''}`;
         console.log(command);
-    
+
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing script: ${stderr}`);
                 return res.status(500).json({ error: 'Error executing model script', details: stderr });
             }
-    
+
             // Call processGeoJSON only if the script execution is successful
             fs.readdir(directoryPath, (err, files) => {
-                
+
                 console.log(err);
                 if (err) {
                     console.error('Error reading directory:', err);
@@ -478,25 +560,25 @@ app.post('/upload-tif', upload.single('geotiff'), (req, res) => {
                             try {
                                 const jsonData = JSON.parse(data);
                                 console.log('Loaded data:', jsonData);
-                            
+
                                 // Check if the features array is empty or null
                                 if (!jsonData.features || jsonData.features.length === 0) {
                                     console.log('No detections found');
                                     return res.status(200).json({ geojson: jsonData, message: 'No detections' });
                                 }
-                            
+
                                 return res.status(200).json({ geojson: jsonData });
                             } catch (error) {
                                 console.error('Error parsing JSON data:', error);
                                 return res.status(500).json({ error: 'Error parsing JSON data' });
-                            }                            
+                            }
                         }
                     });
                 }
             });
         });
     }
-    
+
 });
 
 
@@ -668,7 +750,7 @@ app.post('/save-captured-image', (req, res) => {
 function getRecentGeoJSON(userId) {
 
     const directoryPath = userId ? path.join(__dirname, 'userData', `${userId}`, 'detection', 'geoj') : path.join(__dirname, 'geoj');
-    
+
 
     // Read the directory
     const files = fs.readdirSync(directoryPath);
@@ -1230,7 +1312,7 @@ app.get('/runcmd', (req, res) => {
 });
 
 
-app.listen(3000,'0.0.0.0', () => {
+app.listen(3000, '0.0.0.0', () => {
     console.log('Server is running on port 3000');
 });
 
