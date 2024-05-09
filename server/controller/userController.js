@@ -89,18 +89,22 @@ const UserController = {
     login: async (req, res) => {
         try {
             const { email, password } = req.body;
-            //   const user = await User.findByCredentials(email, password);
             const user = await User.findOne({ email });
-
-
+    
             if (!user) {
                 return res.status(401).json({ message: 'Invalid login credentials' });
             }
-
+    
+            const checkPass = await bcrypt.compare(password, user.password);
+    
+            if (!checkPass) {
+                return res.status(401).json({ message: 'Invalid login credentials' });
+            }
+    
             if (!user.verified) {
                 return res.status(401).json({ message: 'User is not verified. Please check your email for verification instructions.' });
             }
-
+    
             const token = await user.generateAuthToken();
             res.cookie("jwt", token, {
                 maxAge: 12 * 60 * 60 * 1000,
@@ -108,13 +112,13 @@ const UserController = {
                 secure: true,
                 httpOnly: true,
             });
-
+    
             res.send({ user, token });
         } catch (error) {
             console.error(error);
             res.status(400).send(error.message);
         }
-    },
+    },    
 
     logoutss: async (req, res) => {
         try {

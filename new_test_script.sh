@@ -14,7 +14,7 @@ fi
 
 # Activate the Conda virtual environment
 echo "Activating the Conda virtual environment from '$VENV_DIR'."
-conda activate "$VENV_DIR"
+source activate "$VENV_DIR"
 
 # Check if the activation was successful
 if [ $? -eq 0 ]; then
@@ -26,7 +26,7 @@ else
 fi
 
 # Navigate to the 'server' directory
-cd mapobjdetctor/server || { echo "Failed to enter server directory. Exiting."; read -p "Press any key to exit..."; exit 1; }
+cd server || { echo "Failed to enter server directory. Exiting."; read -p "Press any key to exit..."; exit 1; }
 
 # Function to clean up background processes
 cleanup() {
